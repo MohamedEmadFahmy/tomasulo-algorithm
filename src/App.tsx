@@ -1,39 +1,20 @@
-import { useState } from "react";
-import reactLogo from "./assets/react.svg";
-import viteLogo from "/vite.svg";
+import React, { useState } from "react";
+import InputForm from "./components/InputForm";
+import SimulatorView from "./components/SimulatorView";
 
-function App() {
-	const [count, setCount] = useState(0);
+const App: React.FC = () => {
+	const [isStarted, setIsStarted] = useState<boolean>(false);
 
 	return (
-		<>
-			<div>
-				<a href="https://vite.dev" target="_blank">
-					<img src={viteLogo} className="logo" alt="Vite logo" />
-				</a>
-				<a href="https://react.dev" target="_blank">
-					<img
-						src={reactLogo}
-						className="logo react"
-						alt="React logo"
-					/>
-				</a>
-			</div>
-			<h1 className="text-blue-900">Vite + React</h1>
-			<div className="card">
-				<button onClick={() => setCount((count) => count + 1)}>
-					count is {count}
-				</button>
-				<p>
-					Edit <code>src/App.tsx</code> and save to test HMR
-				</p>
-			</div>
-			<p className="read-the-docs">
-				Click on the Vite and React logos to learn more
-			</p>
-		</>
+		<div className="w-full h-screen bg-yellow-300">
+			{!isStarted ? (
+				<InputForm setIsStarted={setIsStarted} />
+			) : (
+				<SimulatorView />
+			)}
+		</div>
 	);
-}
+};
 
 export default App;
 
