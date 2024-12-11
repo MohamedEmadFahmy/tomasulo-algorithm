@@ -1,4 +1,4 @@
-enum InstructionTypeEnum {
+export enum InstructionTypeEnum {
   DADDI = "DADDI",
   DSUBI = "DSUBI",
   ADD_D = "ADD.D",
@@ -21,7 +21,11 @@ enum InstructionTypeEnum {
   BEQ = "BEQ",
 }
 
-type TInstruction = {
+export type Memory = {
+  memory: Int8Array;
+}
+
+export type TInstruction = {
   name: InstructionTypeEnum;
   d: string;
   s: string;
@@ -29,7 +33,7 @@ type TInstruction = {
   latency: number;
 };
 
-type TReservationStationRow = {
+export type TReservationStationRow = {
   tag: string;
   op: InstructionTypeEnum;
   VJ: number;
@@ -41,12 +45,12 @@ type TReservationStationRow = {
 };
 
 // add/sub, mul/div, addi/subi
-type TReservationStation = {
+export type TReservationStation = {
   reservationStationType: string;
   stations: [TReservationStationRow];
 };
 
-type TBufferRow = {
+export type TBufferRow = {
   tag: string;
   busy: number;
   address: number;
@@ -54,18 +58,18 @@ type TBufferRow = {
   Q?: string;
 };
 
-type TBuffer = {
+export type TBuffer = {
   bufferType: string;
   buffers: [TBufferRow];
 };
 
-type TRegisterFile = {
+export type TRegisterFile = {
   tag: string;
   Q: string;
   content: number;
 };
 
-type TCDB = {
+export type TCDB = {
   tag: string;
   value: number;
 };

@@ -1,10 +1,11 @@
 import { useState } from "react";
 import reactLogo from "./assets/react.svg";
 import viteLogo from "/vite.svg";
-
+import  {storeWord, storeDouble}  from "./backend/tomasulo";
 function App() {
 	const [count, setCount] = useState(0);
-
+	storeWord(3.8, 0);
+	// storeWord(3, 0);
 	return (
 		<>
 			<div>
