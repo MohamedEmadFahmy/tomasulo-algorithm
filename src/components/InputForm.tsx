@@ -1,32 +1,39 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import React, { useState } from "react";
+import { TInstruction } from "../backend/types";
 
 interface InputFormProps {
 	setIsStarted: (isStarted: boolean) => void;
+	instructionMemory: TInstruction[];
+	setInstructionMemory: React.Dispatch<React.SetStateAction<TInstruction[]>>;
 }
 
-const InputForm: React.FC<InputFormProps> = ({ setIsStarted }) => {
-	// const [instructions, setInstructions] = useState<string>("");
+// const [instructions, setInstructions] = useState<string>("");
 
-	// // Fix: Added useState for instructionOperands
-	// const [instructionOperands, setInstructionOperands] = useState<{
-	// 	destReg?: string;
-	// 	srcReg1?: string;
-	// 	srcReg2?: string;
-	// 	addressReg?: string;
-	// 	offset?: number;
-	// 	branchReg1?: string;
-	// 	branchReg2?: string;
-	// }>({});
+// // Fix: Added useState for instructionOperands
+// const [instructionOperands, setInstructionOperands] = useState<{
+// 	destReg?: string;
+// 	srcReg1?: string;
+// 	srcReg2?: string;
+// 	addressReg?: string;
+// 	offset?: number;
+// 	branchReg1?: string;
+// 	branchReg2?: string;
+// }>({});
 
-	// const handleAddInstruction = () => {
-	// 	if (instructions.trim() !== "") {
-	// 		setInstructionList((prev) => [...prev, instructions]);
-	// 		setInstructions("");
-	// 		setInstructionOperands({}); // Reset operands when new instruction is added
-	// 	}
-	// };
+// const handleAddInstruction = () => {
+// 	if (instructions.trim() !== "") {
+// 		setInstructionList((prev) => [...prev, instructions]);
+// 		setInstructions("");
+// 		setInstructionOperands({}); // Reset operands when new instruction is added
+// 	}
+// };
 
+const InputForm: React.FC<InputFormProps> = ({
+	setIsStarted,
+	instructionMemory,
+	setInstructionMemory,
+}) => {
 	const [reservationStationSizes, setReservationStationSizes] = useState<
 		Record<string, number>
 	>({
@@ -72,6 +79,69 @@ const InputForm: React.FC<InputFormProps> = ({ setIsStarted }) => {
 		setIsStarted(true);
 	};
 
+	const instructionData = {
+		DADDI: {
+			name: "DADDI",
+		},
+		DSUBI: {
+			name: "DSUBI",
+		},
+		ADD_D: {
+			name: "ADD.D",
+		},
+		ADD_S: {
+			name: "ADD.S",
+		},
+		SUB_D: {
+			name: "SUB.D",
+		},
+		SUB_S: {
+			name: "SUB.S",
+		},
+		MUL_D: {
+			name: "MUL.D",
+		},
+		MUL_S: {
+			name: "MUL.S",
+		},
+		DIV_D: {
+			name: "DIV.D",
+		},
+		DIV_S: {
+			name: "DIV.S",
+		},
+		LW: {
+			name: "LW",
+		},
+		LD: {
+			name: "LD",
+		},
+		L_S: {
+			name: "L.S",
+		},
+		L_D: {
+			name: "L.D",
+		},
+		SW: {
+			name: "SW",
+		},
+		SD: {
+			name: "SD",
+		},
+		S_S: {
+			name: "S.S",
+		},
+		S_D: {
+			name: "S.D",
+		},
+		BNE: {
+			name: "BNE",
+		},
+		BEQ: {
+			name: "BEQ",
+		},
+	};
+
 	return (
 		<div className="bg-black w-full h-screen flex flex-col items-center ">
 			<div className="p-2">
@@ -83,9 +153,11 @@ const InputForm: React.FC<InputFormProps> = ({ setIsStarted }) => {
 				<div id="containers" className="w-full flex flex-1 gap-4">
 					{/* Left Container: Input Instructions */}
 					<div className="flex-[2] flex flex-col gap-4 bg-red-300 p-4">
-						{/* <h2 className="text-center text-white font-bold">
+						<h2 className="text-5xl text-center text-white font-bold">
 							Add Instructions
 						</h2>
+
+						{/*
 
 						<div className="flex flex-col gap-4">
 							<label className="text-white font-semibold">
