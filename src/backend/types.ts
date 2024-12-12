@@ -1,4 +1,5 @@
 export enum InstructionTypeEnum {
+  NONE = "NONE",
   DADDI = "DADDI",
   DSUBI = "DSUBI",
   ADD_D = "ADD.D",
@@ -23,10 +24,10 @@ export enum InstructionTypeEnum {
 
 export type Memory = {
   memory: Int8Array;
-}
+};
 
 export type TInstruction = {
-  name: InstructionTypeEnum;
+  type: InstructionTypeEnum;
   d: string;
   s: string;
   t: string;
@@ -40,8 +41,8 @@ export type TReservationStationRow = {
   VK: number;
   QJ: string;
   QK: string;
-  busy: boolean;
-  timeRemaining: number;
+  busy: number;
+  cyclesRemaining: number;
 };
 
 // add/sub, mul/div, addi/subi
@@ -51,6 +52,7 @@ export type TReservationStation = {
 };
 
 export type TBufferRow = {
+  op: InstructionTypeEnum;
   tag: string;
   busy: number;
   address: number;
