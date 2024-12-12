@@ -1,28 +1,45 @@
-import { Memory } from "./types";
+import { Memory, Cache } from "./types";
 
 /* conventions:
  * 1. Memory is byte addressable
  * 2. All numbers are in 8-bit two's complement
- * 3. A Word is stored in 4 bytes
+ * 3. A Word is stored in 4 bytes and the least significant byte is stored at the lowest address
+ * 4. The memory is 2048 bytes long
+ * 5. When using a SW the word needs to be 32bit representable otherwise most significant bytes are set to 0
+ * 6. We do not treat floating point specially, they are stored as rounded integers
+ * 7. Write Through Policy
+ * 8. Cache Fully Associative
  */
 
-export default function test() {
-  const int8 = new Int8Array(2);
-  int8[0] = 420;
-  console.log(int8[0]); // 42
-  console.log(int8.length); // 2
-  console.log(int8.BYTES_PER_ELEMENT); // 1
-}
+// User Input variables
+const cacheSize: number = 256; //No Of Blocks
+const cacheBlockSize: number = 32; //Size Of Block
+const memorySize: number = 2048;
+// Global variables
+let cacheMissFlag: boolean = false;
 
 //memory
 
 const MainMemory: Memory = {
-  memory: new Int8Array(2048),
+  memory: new Int8Array(memorySize),
+};
+
+const DataCache: Cache = {
+  cache: [],
 };
 
 export function initMemory() {
   for (let i = 0; i < MainMemory.memory.length; i++) {
     MainMemory.memory[i] = 0;
+  }
+}
+
+export function initCache() {
+  for (let i = 0; i < cacheSize; i++) {
+    DataCache.cache[i] = {
+      address: -1,
+      data: new Int8Array(cacheBlockSize),
+    };
   }
 }
 
@@ -60,6 +77,58 @@ export function printByteRange(address: number, range: number) {
   for (let i = address; i < upperBoundExclusive; i++) {
     printByte(i);
   }
+}
+
+export function storeWordCache(value: number, address: number) {
+  if (checkForCacheMiss(address)) {
+    //store the block in first empty position in cache
+    for (let i = 0; i < cacheSize; i++) {
+      if (DataCache.cache[i].address === -1) {
+        DataCache.cache[i].address = address;
+        writeThrough32(value, address);
+        for (let j = 0; j < cacheBlockSize; j++) {
+          if (address + j < memorySize)
+            DataCache.cache[i].data[j] = MainMemory.memory[address + j];
+        }
+        break;
+      }
+    }
+  } else {
+    writeThrough32(value, address);
+  }
+}
+
+export function storeDoubleCache(value: number, address: number) {
+  if (checkForCacheMiss(address)) {
+    //store the block in first empty position in cache
+    for (let i = 0; i < cacheSize; i++) {
+      if (DataCache.cache[i].address === -1) {
+        DataCache.cache[i].address = address;
+        DataCache.cache[i].data = convertToTwoComplement(value, 64);
+        break;
+      }
+    }
+  }
+  writeThrough64(value, address);
+}
+
+function writeThrough32(value: number, address: number) {
+  storeWord(value, address);
+}
+
+function writeThrough64(value: number, address: number) {
+  storeDouble(value, address);
+}
+
+function checkForCacheMiss(address: number) {
+  for (let i = 0; i < cacheSize; i++) {
+    if (DataCache.cache[i].address === address) {
+      cacheMissFlag = false;
+      return false;
+    }
+  }
+  cacheMissFlag = true;
+  return true;
 }
 
 export function loadByte(address: number): number {

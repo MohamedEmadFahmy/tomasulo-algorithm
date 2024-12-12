@@ -25,6 +25,15 @@ export type Memory = {
   memory: Int8Array;
 };
 
+export type Block = {
+  address: number;
+  data: Int8Array;
+};
+
+export type Cache = {
+  cache: Block[];
+};
+
 export type TInstruction = {
   name: InstructionTypeEnum;
   d: string;
