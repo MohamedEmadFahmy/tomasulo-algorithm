@@ -5,7 +5,7 @@ import { TInstruction } from "./backend/types";
 import { simulateStep } from "./backend/tomasulo";
 
 const App: React.FC = () => {
-	const [isStarted, setIsStarted] = useState<boolean>(true);
+	const [isStarted, setIsStarted] = useState<boolean>(false);
 	const [instructionMemory, setInstructionMemory] = useState<TInstruction[]>(
 		[]
 	);
@@ -33,10 +33,12 @@ const App: React.FC = () => {
 			setInstructionMemory={setInstructionMemory}
 		/>
 	) : (
-    <>
-		<SimulatorView config={config} instructionMemory={instructionMemory} />
-    <button onClick={() => simulateStep()}>next</button>
-    </>
+		<>
+			<SimulatorView
+				config={config}
+				instructionMemory={instructionMemory}
+			/>
+		</>
 	);
 };
 
