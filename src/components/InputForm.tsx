@@ -368,7 +368,7 @@ const InputForm: React.FC<InputFormProps> = ({
 
 			// Construct instruction object based on number of inputs
 			const newInstruction: TInstruction = {
-				name: selectedInstruction as InstructionTypeEnum,
+				type: selectedInstruction as InstructionTypeEnum,
 				d: inputValues[0] || "",
 				s: inputValues[1] || "",
 				t: inputValues[2] || "",
@@ -555,13 +555,16 @@ const InputForm: React.FC<InputFormProps> = ({
 						<h2 className="text-center text-5xl text-white font-bold">
 							Program
 						</h2>
-						<ol className="list-decimal list-inside mt-4 overflow-y-auto max-h-[70vh] text-xl font-bold">
+						<ol
+							start={0}
+							className="list-decimal list-inside mt-4 overflow-y-auto max-h-[70vh] text-xl font-bold"
+						>
 							{instructionMemory.length > 0 ? (
 								instructionMemory.map((inst, index) => (
 									<li key={index} className="text-white">
 										{inst.t
-											? `${inst.name} ${inst.d}, ${inst.s}, ${inst.t} ` // (Latency: ${inst.latency})
-											: `${inst.name} ${inst.d}, ${inst.s} `}
+											? `${inst.type} ${inst.d}, ${inst.s}, ${inst.t} ` // (Latency: ${inst.latency})
+											: `${inst.type} ${inst.d}, ${inst.s} `}
 										{/* // (Latency: ${inst.latency})}  */}
 									</li>
 								))
