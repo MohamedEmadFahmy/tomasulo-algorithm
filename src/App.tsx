@@ -3,28 +3,33 @@ import reactLogo from "./assets/react.svg";
 import viteLogo from "/vite.svg";
 import {
   initMemory,
-  storeDouble,
   initCache,
-  printCache,
-  loadDoubleCache,
 } from "./backend/memory";
+
+import {
+  simulateStep,
+} from "./backend/tomasulo";
+
 
 function App() {
   const [count, setCount] = useState(0);
 
   initCache();
   initMemory();
-  const value = Math.pow(2, 41);
-  storeDouble(value, 0);
-  const readValue = loadDoubleCache(0);
-  console.log(`Stored value: ${value} \tReadValue: ${readValue} \tEqual: ${value == readValue}`)
-  printCache();
-  
+  // const value = Math.pow(2, 41);
+  // storeDouble(value, 0);
+  // const readValue = loadDoubleCache(0);
+  // console.log(`Stored value: ${value} \tReadValue: ${readValue} \tEqual: ${value == readValue}`)
+  // printCache();
+
   // storeWordCache(2147483647, 4);
   // console.log(loadWord(4));
   // storeDoubleCache(Math.pow(2, 32), 8);
   // console.log(loadDouble(8));
-  
+  simulateStep();
+
+
+
   return (
     <>
       <div>
