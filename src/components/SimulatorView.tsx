@@ -5,6 +5,7 @@ import { TInstruction } from "../backend/types";
 import { TomasuloSystem } from "../backend/tomasulo";
 import GenericTable from "./GenericTable";
 import { GenericTableTypeEnum } from "../constants";
+import { simulateStep } from "../backend/tomasulo";
 
 interface SimulatorViewProps {
 	config: Config; // Ensure this property exists on SimulatorViewProps
@@ -18,7 +19,7 @@ const SimulatorView: React.FC<SimulatorViewProps> = ({
 
 	const handleClick = () => {
 		console.log("Old system state: ", TomasuloSystem);
-		TomasuloSystem.nextCycle();
+		simulateStep();
 		console.log("New system state: ", TomasuloSystem);
 		setToggleState(!toggleState);
 	};
@@ -32,7 +33,7 @@ const SimulatorView: React.FC<SimulatorViewProps> = ({
 			</div>
 			<div className="bg-gray-300 flex-[10] w-full flex flex-col items-center gap-10">
 				<p className="text-5xl font-bold">
-					Current Clock Cycle: {TomasuloSystem.cycle}
+					Current Clock Cycle: {TomasuloSystem.clock}
 				</p>
 				<button className="bg-blue-300 p-4" onClick={handleClick}>
 					Next Clock Cycle
