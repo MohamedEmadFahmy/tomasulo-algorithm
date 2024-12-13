@@ -3,64 +3,64 @@ import { GenericTableTypeEnum } from "../constants";
 import { register } from "module";
 
 interface TableColumn {
-  key: string;
-  header: string;
-  width?: string;
+	key: string;
+	header: string;
+	width?: string;
 }
 
 interface GenericTableProps {
-  type: GenericTableTypeEnum;
-  data: Record<string, unknown>[];
-  title: string;
-  className?: string;
-  emptyMessage?: string;
+	type: GenericTableTypeEnum;
+	data: Record<string, unknown>[];
+	title: string;
+	className?: string;
+	emptyMessage?: string;
 }
 
 // Reservation Stations Columns
 const reservationStationsColumns = [
-  { key: "tag", header: "Station" },
-  { key: "op", header: "Operation" },
-  { key: "VJ", header: "Vj" },
-  { key: "VK", header: "Vk" },
-  { key: "QJ", header: "Qj" },
-  { key: "QK", header: "Qk" },
-  { key: "busy", header: "Busy" },
-  { key: "cyclesRemaining", header: "Cycles Remaining" },
+	{ key: "tag", header: "Station" },
+	{ key: "op", header: "Operation" },
+	{ key: "VJ", header: "Vj" },
+	{ key: "VK", header: "Vk" },
+	{ key: "QJ", header: "Qj" },
+	{ key: "QK", header: "Qk" },
+	{ key: "busy", header: "Busy" },
+	{ key: "cyclesRemaining", header: "Cycles Remaining" },
 ];
 
 // Load Buffer Table
 const loadBufferColumns = [
-  { key: "tag", header: "Tag" },
-  { key: "busy", header: "Busy" },
-  { key: "address", header: "Address" },
-  { key: "cyclesRemaining", header: "Cycles Remaining" },
+	{ key: "tag", header: "Tag" },
+	{ key: "busy", header: "Busy" },
+	{ key: "address", header: "Address" },
+	{ key: "cyclesRemaining", header: "Cycles Remaining" },
 ];
 
 // Store Buffer Table
 const storeBufferColumns = [
-  { key: "tag", header: "Tag" },
-  { key: "busy", header: "Busy" },
-  { key: "address", header: "Address" },
-  { key: "v", header: "V" },
-  { key: "q", header: "Q" },
-  { key: "cyclesRemaining", header: "Cycles Remaining" },
+	{ key: "tag", header: "Tag" },
+	{ key: "busy", header: "Busy" },
+	{ key: "address", header: "Address" },
+	{ key: "V", header: "V" },
+	{ key: "Q", header: "Q" },
+	{ key: "cyclesRemaining", header: "Cycles Remaining" },
 ];
 
 // Instruction Memory Table
-const dataMemoryColumns = [
+const registerFileColumns = [
 	{ key: "tag", header: "Tag" },
 	{ key: "Q", header: "Q" },
 	{ key: "content", header: "Data" },
 ];
 
 const GenericTable: React.FC<GenericTableProps> = ({
-  type,
-  data,
-  title,
-  className = "",
-  emptyMessage = "No data available",
+	type,
+	data,
+	title,
+	className = "",
+	emptyMessage = "No data available",
 }) => {
-  const [columns, setColumns] = useState<TableColumn[]>([]);
+	const [columns, setColumns] = useState<TableColumn[]>([]);
 
 	useEffect(() => {
 		if (type === GenericTableTypeEnum.ReservationStations) {

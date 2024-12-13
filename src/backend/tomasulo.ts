@@ -34,7 +34,7 @@ let userInput = {
 	noOfMulDivRS: 3,
 	noOfLoadBuffers: 3,
 	noOfStoreBuffers: 3,
-	noOfIntegerAddSubRS: 3,
+	noOfIntegerAddSubRS: 10,
 	cacheSize: 16,
 	cacheBlockSize: 4,
 	programInstructions: [
@@ -99,7 +99,7 @@ let ResvationStation2: TReservationStation = {
 
 let ReservationStationInteger: TReservationStation = {
 	reservationStationType: ReservationStationTypeEnum.INTEGER,
-	stations: Array.from({ length: 32 }, (_, i) => ({
+	stations: Array.from({ length: userInput.noOfIntegerAddSubRS }, (_, i) => ({
 		tag: `AI${i + 1}`,
 		op: InstructionTypeEnum.NONE,
 		VJ: 0,
@@ -304,7 +304,7 @@ function setReservationStations() {
 
 	ReservationStationInteger = {
 		reservationStationType: ReservationStationTypeEnum.INTEGER,
-		stations: Array.from({ length: 32 }, (_, i) => ({
+		stations: Array.from({ length: userInput.noOfMulDivRS }, (_, i) => ({
 			tag: `AI${i + 1}`,
 			op: InstructionTypeEnum.NONE,
 			VJ: 0,
@@ -1380,10 +1380,10 @@ function printTomasuloSystem(): void {
 }
 
 export function simulateStep(): void {
+	writeBack();
+	execute();
 	issue();
 	printTomasuloSystem();
-	// execute();
-	// writeBack();
 	TomasuloSystem.clock++;
 	console.log(`TomasuloSystem ${TomasuloSystem}`);
 }
