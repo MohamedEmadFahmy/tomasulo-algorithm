@@ -39,7 +39,7 @@ export type Block = {
   data: Int8Array;
 };
 
-export type Cache = {
+export type SystemCache = {
   cache: Block[];
 };
 
@@ -59,6 +59,7 @@ export type TReservationStationRow = {
   QJ: string;
   QK: string;
   busy: number;
+  res: number;
   cyclesRemaining: number;
 };
 
@@ -75,6 +76,7 @@ export type TBufferRow = {
   address: number;
   V?: number;
   Q?: string;
+  res?: number;
   cyclesRemaining: number;
 };
 
