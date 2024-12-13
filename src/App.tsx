@@ -3,23 +3,11 @@ import reactLogo from "./assets/react.svg";
 import viteLogo from "/vite.svg";
 import {
   initMemory,
-  loadByte,
-  printMemory,
-  printByte,
-  printByteRange,
-  returnByteString,
-  setByte,
-  loadWord,
-  storeWord,
   storeDouble,
-  loadDouble,
-  storeWordCache,
   initCache,
   printCache,
-  storeDoubleCache,
-  loadWordCache,
   loadDoubleCache,
-} from "./backend/tomasulo";
+} from "./backend/memory";
 
 function App() {
   const [count, setCount] = useState(0);
