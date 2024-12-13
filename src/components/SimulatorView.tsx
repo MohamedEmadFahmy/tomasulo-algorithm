@@ -288,6 +288,13 @@ const SimulatorView: React.FC<SimulatorViewProps> = ({
 					</ol>
 				</div>
 				<div className="mb-2"></div>
+
+				{/* Register File */}
+				<GenericTable
+					type={GenericTableTypeEnum.RegisterFile}
+					data={TomasuloSystem ? TomasuloSystem.registerFile : []}
+					title={"Register File"}
+				></GenericTable>
 			</div>
 		</div>
 	);

@@ -1,5 +1,8 @@
-import { Memory, SystemCache } from "./types";
+/* eslint-disable @typescript-eslint/no-unused-vars */
+import { Config } from "../App";
 import { userInput } from "../userInput";
+import { Memory, SystemCache, TInstruction } from "./types";
+// import { userInput } from "./tomasulo";
 
 /* conventions:
  * 1. Memory is byte addressable
@@ -49,9 +52,12 @@ export let DataCache: SystemCache = {
 	cache: [],
 };
 
-export function setMemory() {
-	cacheSize = userInput.cacheSize; //No Of Blocks
-	cacheBlockSize = userInput.cacheBlockSize; //Size Of Block
+export function setMemory(
+	systemUserInput: Config,
+	systemProgramInstructions: TInstruction[]
+) {
+	cacheSize = systemUserInput.cache_size; //No Of Blocks
+	cacheBlockSize = systemUserInput.block_size; //Size Of Block
 	// Global variables
 
 	memorySize = 2048;
@@ -67,7 +73,7 @@ export function setMemory() {
 
 	InstructionMemory = {
 		//an array of all instructions entered by the user
-		instructions: userInput.programInstructions,
+		instructions: systemProgramInstructions,
 		PC: PC,
 	};
 

@@ -227,7 +227,7 @@ export function setupSystem(
 	systemProgramInstructions: TInstruction[]
 ): ITomasuloSystem {
 	setUserInput(systemUserInput, systemProgramInstructions);
-	setMemory();
+	setMemory(systemUserInput, systemProgramInstructions);
 	setBusDetails();
 	setReservationStations();
 	setRegisterFile();
