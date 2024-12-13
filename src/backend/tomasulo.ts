@@ -166,7 +166,63 @@ function writeDoubleOnCache(value: number, address:number){
   }
 }
 
+function readWordFromCache(address:number):number{
 
+  let blockIndex = findBlockIndex(address);
+  let returnedArray = new Int8Array(4);
+
+  for(let i = 0; i<cacheBlockSize; i++){
+    if(address === (DataCache.cache[blockIndex].address[0])+i){
+      let startingBlockAddress = address-DataCache.cache[blockIndex].address[0];
+      for(let j = startingBlockAddress; j <= startingBlockAddress + 3; j++){
+        returnedArray[j - startingBlockAddress] = DataCache.cache[blockIndex].data[j]
+      }
+      break;
+    }
+  }
+
+  console.log(returnedArray);
+
+  return getValue(returnedArray, 4);
+
+}
+
+function readDoubleFromCache(address:number):number{
+  let blockIndex = findBlockIndex(address);
+  let returnedArray = new Int8Array(8);
+
+  for(let i = 0; i<cacheBlockSize; i++){
+    if(address === (DataCache.cache[blockIndex].address[0])+i){
+      let startingBlockAddress = address-DataCache.cache[blockIndex].address[0];
+      for(let j = startingBlockAddress; j <= startingBlockAddress + 7; j++){
+        returnedArray[j - startingBlockAddress] = DataCache.cache[blockIndex].data[j]
+      }
+      break;
+    }
+  }
+
+  return getValue(returnedArray, 8);
+}
+
+export function loadWordCache(address:number):number{
+  if (checkForCacheMiss(address)) {
+    console.log("Entered in read");
+    //store the block in first empty position in cache
+    let blockIndex = findEmptyBlockInCache();
+    DataCache.cache[blockIndex].address = [address, address + cacheBlockSize - 1];
+    fetchBlockfromMem(address, blockIndex);
+  }
+  return readWordFromCache(address);
+}
+
+export function loadDoubleCache(address:number){
+  if (checkForCacheMiss(address)) {
+    let blockIndex = findEmptyBlockInCache();
+    DataCache.cache[blockIndex].address = [address, address + cacheBlockSize - 1];
+    fetchBlockfromMem(address, blockIndex);
+  }
+  return readDoubleFromCache(address);
+} 
 
 export function storeWordCache(value: number, address: number) {
   if (checkForCacheMiss(address)) {
@@ -249,18 +305,28 @@ export function doubleString(address: number): number {
   return getTwosComplementBinaryStringValue(wordString);
 }
 
+export function getValue(wordBytes: Int8Array, size: number): number {
+  let valueString = "";
+
+  for (let i = size - 1; i >= 0; i--) {
+    const byteValue = wordBytes[i];
+    valueString += getByteString(byteValue);
+  }
+
+  return getTwosComplementBinaryStringValue(valueString);
+}
+
 export function loadWord(address: number): number {
   //check range
   checkMemoryBounds(address, 4);
   // console.log("miss: " + cacheMissFlag);
   let wordString = "";
 
-  for (let i = 3; i >= address; i--) {
+  for (let i = 3 + address; i >= address; i--) {
     const byteValue = MainMemory.memory[address + i];
     wordString += getByteString(byteValue);
   }
 
-  // console.log(wordString);
   return getTwosComplementBinaryStringValue(wordString);
 }
 
@@ -270,7 +336,7 @@ export function loadDouble(address: number): number {
 
   let doubleString = "";
 
-  for (let i = 7; i >= address; i--) {
+  for (let i = 7 + address; i >= address; i--) {
     const byteValue = MainMemory.memory[address + i];
     doubleString += getByteString(byteValue);
   }

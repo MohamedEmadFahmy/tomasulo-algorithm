@@ -17,6 +17,8 @@ import {
   initCache,
   printCache,
   storeDoubleCache,
+  loadWordCache,
+  loadDoubleCache,
 } from "./backend/tomasulo";
 
 function App() {
@@ -24,13 +26,16 @@ function App() {
 
   initCache();
   initMemory();
-  storeWordCache(20, 0);
-  console.log(loadWord(0));
-  storeWordCache(2147483647, 4);
-  console.log(loadWord(4));
-  storeDoubleCache(9241421688590567425, 8);
-  console.log(loadDouble(8));
+  const value = Math.pow(2, 41);
+  storeDouble(value, 0);
+  const readValue = loadDoubleCache(0);
+  console.log(`Stored value: ${value} \tReadValue: ${readValue} \tEqual: ${value == readValue}`)
   printCache();
+  
+  // storeWordCache(2147483647, 4);
+  // console.log(loadWord(4));
+  // storeDoubleCache(Math.pow(2, 32), 8);
+  // console.log(loadDouble(8));
   
   return (
     <>
