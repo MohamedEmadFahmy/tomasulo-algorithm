@@ -301,25 +301,59 @@ const SimulatorView: React.FC<SimulatorViewProps> = ({
 					<h2 className="text-center text-5xl text-white font-bold">
 						Cache
 					</h2>
-					<ol
-						start={0}
-						className="list-decimal list-inside mt-4 overflow-y-auto max-h-[70vh] text-xl font-bold"
-					>
-						{instructionMemory.length > 0 ? (
-							TomasuloSystem.cache.cache.map((block, index) => (
-								<li key={index} className="text-white">
-									<div key={index}>
-										{block.data.map((data, dataIndex) => (
-											<p key={dataIndex}>{data}</p>
-										))}
-									</div>
-								</li>
-							))
+					<div className="overflow-y-auto max-h-[70vh]">
+						{TomasuloSystem?.cache?.cache?.length > 0 ? (
+							<table className="table-auto w-full text-xl font-bold text-white">
+								<thead>
+									<tr className="bg-blue-500">
+										<th className="px-4 py-2">
+											Block Index
+										</th>
+										<th className="px-4 py-2">Address</th>
+										<th className="px-4 py-2">Data</th>
+									</tr>
+								</thead>
+								<tbody>
+									{TomasuloSystem?.cache?.cache?.map(
+										(block, index) => (
+											<tr
+												key={index}
+												className="even:bg-blue-400 odd:bg-blue-300"
+											>
+												<td className="px-4 py-2">
+													{index}
+												</td>
+												<td className="px-4 py-2">
+													[{block?.address[0]},{" "}
+													{block?.address[1]}]
+												</td>
+												<td className="px-4 py-2">
+													{Array.from(
+														block?.data
+													).join(", ")}
+												</td>
+											</tr>
+										)
+									)}
+								</tbody>
+							</table>
 						) : (
-							<p className="text-white">No cache added</p>
+							<p
+								className="text-white text-center"
+								aria-live="polite"
+							>
+								No cache added
+							</p>
 						)}
-					</ol>
+					</div>
 				</div>
+
+				{/* Instruction Queue */}
+				<GenericTable
+					type={GenericTableTypeEnum.InstructionQueue}
+					data={TomasuloSystem ? TomasuloSystem.instructionQueue : []}
+					title={"Instruction Queue"}
+				></GenericTable>
 			</div>
 		</div>
 	);

@@ -243,6 +243,31 @@ const instructionInputTypes: Record<string, InstructionInputType> = {
 			{
 				name: "Destination Register",
 				type: "register",
+				registerType: "integer",
+			},
+			{ name: "Memory Address", type: "immediate" },
+		],
+		latencyType: "LOAD",
+	},
+
+	"L.S": {
+		type: "memory",
+		requiredFields: [
+			{
+				name: "Destination Register",
+				type: "register",
+				registerType: "float",
+			},
+			{ name: "Memory Address", type: "immediate" },
+		],
+		latencyType: "LOAD",
+	},
+	"L.D": {
+		type: "memory",
+		requiredFields: [
+			{
+				name: "Destination Register",
+				type: "register",
 				registerType: "float",
 			},
 			{ name: "Memory Address", type: "immediate" },
@@ -262,6 +287,30 @@ const instructionInputTypes: Record<string, InstructionInputType> = {
 		latencyType: "STORE",
 	},
 	SD: {
+		type: "memory",
+		requiredFields: [
+			{
+				name: "Source Register",
+				type: "register",
+				registerType: "integer",
+			},
+			{ name: "Memory Address", type: "immediate" },
+		],
+		latencyType: "STORE",
+	},
+	"S.S": {
+		type: "memory",
+		requiredFields: [
+			{
+				name: "Source Register",
+				type: "register",
+				registerType: "float",
+			},
+			{ name: "Memory Address", type: "immediate" },
+		],
+		latencyType: "STORE",
+	},
+	"S.D": {
 		type: "memory",
 		requiredFields: [
 			{

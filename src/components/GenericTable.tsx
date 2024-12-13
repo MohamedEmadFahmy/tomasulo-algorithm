@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from "react";
 import { GenericTableTypeEnum } from "../constants";
-import { register } from "module";
 
 interface TableColumn {
 	key: string;
@@ -53,6 +52,14 @@ const registerFileColumns = [
 	{ key: "content", header: "Data" },
 ];
 
+const InstructionQueueColumns = [
+	{ key: "type", header: "Type" },
+	{ key: "d", header: "D" },
+	{ key: "s", header: "S" },
+	{ key: "t", header: "T" },
+	{ key: "latency", header: "Latency" },
+];
+
 const GenericTable: React.FC<GenericTableProps> = ({
 	type,
 	data,
@@ -71,6 +78,8 @@ const GenericTable: React.FC<GenericTableProps> = ({
 			setColumns(storeBufferColumns);
 		} else if (type === GenericTableTypeEnum.RegisterFile) {
 			setColumns(registerFileColumns);
+		} else if (type === GenericTableTypeEnum.InstructionQueue) {
+			setColumns(InstructionQueueColumns);
 		}
 	}, [type]);
 

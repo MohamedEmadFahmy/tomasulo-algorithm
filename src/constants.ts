@@ -3,4 +3,5 @@ export enum GenericTableTypeEnum {
 	LoadBuffer,
 	StoreBuffer,
 	RegisterFile,
+	InstructionQueue,
 }

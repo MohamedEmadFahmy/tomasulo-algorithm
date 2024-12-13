@@ -635,7 +635,7 @@ function issueToStoreBuffer(instruction: TInstruction): void {
 
 	//loading operands
 	buffer.op = instruction.type;
-	buffer.address = parseInt(instruction.t);
+	buffer.address = parseInt(instruction.s);
 	buffer.V = registerFile.find((r) => r.tag === instruction.d)!.content;
 	buffer.Q = registerFile.find((r) => r.tag === instruction.s)!.Q;
 	buffer.busy = 1;
