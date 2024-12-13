@@ -12,7 +12,7 @@ const bus: TCDB = {
     value: 0,
 };
 
-const ResvationStation1: TReservationStation = {
+const ReservationStation1: TReservationStation = {
     reservationStationType: ReservationStationTypeEnum.ADD_SUB,
     stations: Array.from({ length: userInput.noOfAddSubRS }, (_, i) => ({
         tag: `A${i + 1}`,
@@ -27,7 +27,7 @@ const ResvationStation1: TReservationStation = {
     })),
 };
 
-const ResvationStation2: TReservationStation = {
+const ReservationStation2: TReservationStation = {
     reservationStationType: ReservationStationTypeEnum.MUL_DIV,
     stations: Array.from({ length: userInput.noOfMulDivRS }, (_, i) => ({
         tag: `M${i + 1}`,
@@ -44,8 +44,8 @@ const ResvationStation2: TReservationStation = {
 
 const ReservationStationInteger: TReservationStation = {
     reservationStationType: ReservationStationTypeEnum.INTEGER,
-    stations: Array.from({ length: 32 }, (_, i) => ({
-        tag: `AI${i + 1}`,
+    stations: Array.from({ length: userInput.noOfIntegerAddSubRS }, (_, i) => ({
+        tag: `A${i + 1}I`,
         op: InstructionTypeEnum.NONE,
         VJ: 0,
         VK: 0,
@@ -158,8 +158,8 @@ const instructionQueue: TInstruction[] = [];
 //initialize the system
 const tomasuloSystem = {
     ReservationStations: [
-        ResvationStation1,
-        ResvationStation2,
+        ReservationStation1,
+        ReservationStation2,
         ReservationStationInteger,
     ],
     Buffers: [
@@ -197,6 +197,7 @@ function issue(): void {
     fetchInstruction();
     
     const instruction = instructionQueue[instructionQueue.length - 1]; //always fetches last 
+    console.log("Instruction Fetched", instruction);
     if (!instruction) {
         console.log("No more instructions to issue.");
         return;
@@ -248,7 +249,7 @@ function issue(): void {
 }
 
 function issueToReservationStation1(instruction: TInstruction): void {
-    const rs = ResvationStation1.stations.find((rs) => rs.busy === 0);
+    const rs = ReservationStation1.stations.find((rs) => rs.busy === 0);
     if (!rs) {
         console.log("No available reservation station for ADD/SUB operation.");
         return;
@@ -268,7 +269,7 @@ function issueToReservationStation1(instruction: TInstruction): void {
 }
 
 function issueToReservationStation2(instruction: TInstruction): void {
-    const rs = ResvationStation2.stations.find((rs) => rs.busy === 0);
+    const rs = ReservationStation2.stations.find((rs) => rs.busy === 0);
     if (!rs) {
         console.log("No available reservation station for MUL/DIV operation.");
         return;
@@ -863,12 +864,12 @@ function writeBack1(index: number, tag: string, result: number): void {
     bus.value = result;
 
     // Clear the reservation station
-    ResvationStation1.stations[index].tag = "";
-    ResvationStation1.stations[index].op = InstructionTypeEnum.NONE;
-    ResvationStation1.stations[index].VJ = 0;
-    ResvationStation1.stations[index].VK = 0;
-    ResvationStation1.stations[index].busy = 0;
-    ResvationStation1.stations[index].cyclesRemaining = 0;
+    ReservationStation1.stations[index].tag = "";
+    ReservationStation1.stations[index].op = InstructionTypeEnum.NONE;
+    ReservationStation1.stations[index].VJ = 0;
+    ReservationStation1.stations[index].VK = 0;
+    ReservationStation1.stations[index].busy = 0;
+    ReservationStation1.stations[index].cyclesRemaining = 0;
 
     // Simulate bus usage for a cycle
     setTimeout(() => {
@@ -889,12 +890,12 @@ function writeBack2(index: number, tag: string, result: number): void {
     bus.value = result;
 
     // Clear the reservation station
-    ResvationStation2.stations[index].tag = "";
-    ResvationStation2.stations[index].op = InstructionTypeEnum.NONE;
-    ResvationStation2.stations[index].VJ = 0;
-    ResvationStation2.stations[index].VK = 0;
-    ResvationStation2.stations[index].busy = 0;
-    ResvationStation2.stations[index].cyclesRemaining = 0;
+    ReservationStation2.stations[index].tag = "";
+    ReservationStation2.stations[index].op = InstructionTypeEnum.NONE;
+    ReservationStation2.stations[index].VJ = 0;
+    ReservationStation2.stations[index].VK = 0;
+    ReservationStation2.stations[index].busy = 0;
+    ReservationStation2.stations[index].cyclesRemaining = 0;
 
     // Simulate bus usage for a cycle
     setTimeout(() => {
@@ -940,7 +941,7 @@ function writeBack() {
     let maxPriority = 0;
     let highestPriorityTag = "";
 
-    for (const rs of ResvationStation1.stations) {
+    for (const rs of ReservationStation1.stations) {
         if (rs.res !== Number.MIN_VALUE) {
             const priority = buspriority(rs.tag);
             if (priority >= maxPriority) {
@@ -949,7 +950,7 @@ function writeBack() {
             }
         }
     }
-    for (const rs of ResvationStation2.stations) {
+    for (const rs of ReservationStation2.stations) {
         if (rs.res !== Number.MIN_VALUE) {
             const priority = buspriority(rs.tag);
             if (priority >= maxPriority) {
@@ -979,16 +980,16 @@ function writeBack() {
 
     // write the highest priority
 
-    for (const rs of ResvationStation1.stations) {
+    for (const rs of ReservationStation1.stations) {
         if (rs.tag === highestPriorityTag) {
-            writeBack1(ResvationStation1.stations.indexOf(rs), rs.tag, rs.res);
+            writeBack1(ReservationStation1.stations.indexOf(rs), rs.tag, rs.res);
             rs.res = Number.MIN_VALUE;
             return;
         }
     }
-    for (const rs of ResvationStation2.stations) {
+    for (const rs of ReservationStation2.stations) {
         if (rs.tag === highestPriorityTag) {
-            writeBack2(ResvationStation2.stations.indexOf(rs), rs.tag, rs.res);
+            writeBack2(ReservationStation2.stations.indexOf(rs), rs.tag, rs.res);
             rs.res = Number.MIN_VALUE;
             return;
         }
@@ -1014,7 +1015,7 @@ function writeBack() {
 function buspriority(tag: string): number {
 
     let count = 0;
-    const reservationStations = [ResvationStation1, ResvationStation2, ReservationStationInteger];
+    const reservationStations = [ReservationStation1, ReservationStation2, ReservationStationInteger];
     for (const rs of reservationStations) {
         for (const station of rs.stations) {
             if (station.tag === tag) {
@@ -1070,8 +1071,8 @@ function buspriority(tag: string): number {
 
 function execute(): void {
 
-    execRes1(ResvationStation1);
-    execRes2(ResvationStation2);
+    execRes1(ReservationStation1);
+    execRes2(ReservationStation2);
     execLoad(LoadBuffer);
     execStore(StoreBuffer);
     execResInt(ReservationStationInteger);
@@ -1081,9 +1082,9 @@ function execute(): void {
 function printTomasuloSystemReservationStations(): void {
     console.log("Reservation Stations:");
     console.log("Reservation Station Add/Sub:");
-    console.table(ResvationStation1.stations);
+    console.table(ReservationStation1.stations);
     console.log("Reservation Station Mul/Div:");
-    console.table(ResvationStation2.stations);
+    console.table(ReservationStation2.stations);
     console.log("Integer Reservation Station ADDI/SUBI:");
     console.table(ReservationStationInteger.stations);
 }
