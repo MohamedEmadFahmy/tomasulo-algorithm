@@ -2,10 +2,10 @@ import React, { useState } from "react";
 import InputForm from "./components/InputForm";
 import SimulatorView from "./components/SimulatorView";
 import { TInstruction } from "./backend/types";
+import { simulateStep } from "./backend/tomasulo";
 
 const App: React.FC = () => {
-	const [isStarted, setIsStarted] = useState<boolean>(false);
-
+	const [isStarted, setIsStarted] = useState<boolean>(true);
 	const [instructionMemory, setInstructionMemory] = useState<TInstruction[]>(
 		[]
 	);
@@ -33,7 +33,10 @@ const App: React.FC = () => {
 			setInstructionMemory={setInstructionMemory}
 		/>
 	) : (
+    <>
 		<SimulatorView config={config} instructionMemory={instructionMemory} />
+    <button onClick={() => simulateStep()}>next</button>
+    </>
 	);
 };
 

@@ -1,5 +1,5 @@
 import {
-    MainMemory, DataCache, InstructionMemory,loadWordCache,
+    MainMemory, DataCache, InstructionMemory, loadWordCache,
     loadDoubleCache, storeWordCache, storeDoubleCache, checkForCacheMiss,
     cacheMissPenalty, cacheHitLatency
 } from "./memory";
@@ -117,8 +117,8 @@ const registerFile: TRegisterFile[] = [
     { tag: "R31", Q: "0", content: 0 },
     { tag: "F0", Q: "0", content: 0 },
     { tag: "F1", Q: "0", content: 0 },
-    { tag: "F2", Q: "0", content: 0 },
-    { tag: "F3", Q: "0", content: 0 },
+    { tag: "F2", Q: "0", content: 3 },
+    { tag: "F3", Q: "0", content: 3 },
     { tag: "F4", Q: "0", content: 0 },
     { tag: "F5", Q: "0", content: 0 },
     { tag: "F6", Q: "0", content: 0 },
@@ -182,12 +182,16 @@ InstructionMemory.instructions = userInput.programInstructions;
 // Instruction Queue
 
 function fetchInstruction(): void {
-    const instruction = InstructionMemory.instructions[InstructionMemory.PC++];
-    if (!instruction) {
+
+    if (InstructionMemory.PC >= InstructionMemory.instructions.length) {
         console.log("No more instructions to fetch.");
         return;
     }
+
+    const instruction = InstructionMemory.instructions[InstructionMemory.PC];
+
     instructionQueue.push(instruction);
+    InstructionMemory.PC++;
     // [1] --> [1,2]
 }
 
@@ -195,14 +199,15 @@ function issue(): void {
 
     //fetch
     fetchInstruction();
-    
-    const instruction = instructionQueue[instructionQueue.length - 1]; //always fetches last 
-    console.log("Instruction Fetched", instruction);
-    if (!instruction) {
+
+
+    if (instructionQueue.length === 0) {
         console.log("No more instructions to issue.");
         return;
     }
 
+    const instruction = instructionQueue[instructionQueue.length - 1]; //always fetches last 
+    console.log("Instruction Fetched", instruction);
     //issue
     switch (instruction.type) {
 
@@ -310,7 +315,7 @@ function issueToReservationStationInteger(instruction: TInstruction): void {
 
 function issueToLoadBuffer(instruction: TInstruction): void {
     const buffer = LoadBuffer.buffers.find((buffer) => buffer.busy === 0);
-    const checkStoreBuffer = StoreBuffer.buffers.find((buf) => buf.address === parseInt(instruction.s) && buf.busy === 1);
+    const checkStoreBuffer = StoreBuffer.buffers.find((buf) => buf.address === parseInt(instruction.t) && buf.busy === 1);
     if (checkStoreBuffer) {
         console.log("Store buffer with the same effective address found.");
         //stall
@@ -327,15 +332,15 @@ function issueToLoadBuffer(instruction: TInstruction): void {
 
     //loading operands
     buffer.op = instruction.type;
-    buffer.address = parseInt(instruction.s);
+    buffer.address = parseInt(instruction.t);
     buffer.busy = 1;
-    buffer.cyclesRemaining = checkForCacheMiss(parseInt(instruction.s)) ? cacheMissPenalty : cacheHitLatency
+    buffer.cyclesRemaining = (checkForCacheMiss(parseInt(instruction.s)) ? cacheMissPenalty : cacheHitLatency) + instruction.latency;
 }
 
 function issueToStoreBuffer(instruction: TInstruction): void {
     const buffer = StoreBuffer.buffers.find((buffer) => buffer.busy === 0);
-    const checkStoreBuffer = StoreBuffer.buffers.find((buf) => buf.address === parseInt(instruction.s) && buf.busy === 1);
-    const checkLoadBuffer = LoadBuffer.buffers.find((buf) => buf.address === parseInt(instruction.s) && buf.busy === 1);
+    const checkStoreBuffer = StoreBuffer.buffers.find((buf) => buf.address === parseInt(instruction.t) && buf.busy === 1);
+    const checkLoadBuffer = LoadBuffer.buffers.find((buf) => buf.address === parseInt(instruction.t) && buf.busy === 1);
     if (checkStoreBuffer || checkLoadBuffer) {
         console.log("Store or Load buffer with the same effective address found.");
         //stall
@@ -351,11 +356,11 @@ function issueToStoreBuffer(instruction: TInstruction): void {
 
     //loading operands
     buffer.op = instruction.type;
-    buffer.address = parseInt(instruction.s);
+    buffer.address = parseInt(instruction.t);
     buffer.V = registerFile.find((r) => r.tag === instruction.d)!.content;
-    buffer.Q = registerFile.find((r) => r.tag === instruction.d)!.Q;
+    buffer.Q = registerFile.find((r) => r.tag === instruction.s)!.Q;
     buffer.busy = 1;
-    buffer.cyclesRemaining = checkForCacheMiss(parseInt(instruction.s)) ? cacheMissPenalty : cacheHitLatency
+    buffer.cyclesRemaining = (checkForCacheMiss(parseInt(instruction.s)) ? cacheMissPenalty : cacheHitLatency) + instruction.latency
 }
 
 function get_op(rs: TReservationStationRow): InstructionTypeEnum {
@@ -837,21 +842,22 @@ function writeBackInt(index: number, tag: string, result: number): void {
     bus.tag = tag;
     bus.value = result;
 
+    // Update the register file
+    for (const register of registerFile) {
+        if (register.tag === tag) {
+            register.Q = "0"; // Clear Q field
+            register.content = result; // Update content with the result
+            break;
+        }
+    }
+
     // Clear the reservation station
-    ReservationStationInteger.stations[index].tag = "";
     ReservationStationInteger.stations[index].op = InstructionTypeEnum.NONE;
     ReservationStationInteger.stations[index].VJ = 0;
     ReservationStationInteger.stations[index].VK = 0;
     ReservationStationInteger.stations[index].busy = 0;
     ReservationStationInteger.stations[index].cyclesRemaining = 0;
 
-    // Simulate bus usage for a cycle
-    setTimeout(() => {
-        // Clear the bus after one cycle
-        bus.tag = "";
-        bus.value = 0;
-        console.log("Bus cleared.");
-    }, 1000); // Adjust timeout based on your simulation clock
 }
 function writeBack1(index: number, tag: string, result: number): void {
     if (!isBusAvailable()) {
@@ -864,20 +870,12 @@ function writeBack1(index: number, tag: string, result: number): void {
     bus.value = result;
 
     // Clear the reservation station
-    ReservationStation1.stations[index].tag = "";
     ReservationStation1.stations[index].op = InstructionTypeEnum.NONE;
     ReservationStation1.stations[index].VJ = 0;
     ReservationStation1.stations[index].VK = 0;
     ReservationStation1.stations[index].busy = 0;
     ReservationStation1.stations[index].cyclesRemaining = 0;
 
-    // Simulate bus usage for a cycle
-    setTimeout(() => {
-        // Clear the bus after one cycle
-        bus.tag = "";
-        bus.value = 0;
-        console.log("Bus cleared.");
-    }, 1000); // Adjust timeout based on your simulation clock
 }
 function writeBack2(index: number, tag: string, result: number): void {
     if (!isBusAvailable()) {
@@ -890,20 +888,12 @@ function writeBack2(index: number, tag: string, result: number): void {
     bus.value = result;
 
     // Clear the reservation station
-    ReservationStation2.stations[index].tag = "";
     ReservationStation2.stations[index].op = InstructionTypeEnum.NONE;
     ReservationStation2.stations[index].VJ = 0;
     ReservationStation2.stations[index].VK = 0;
     ReservationStation2.stations[index].busy = 0;
     ReservationStation2.stations[index].cyclesRemaining = 0;
 
-    // Simulate bus usage for a cycle
-    setTimeout(() => {
-        // Clear the bus after one cycle
-        bus.tag = "";
-        bus.value = 0;
-        console.log("Bus cleared.");
-    }, 1000); // Adjust timeout based on your simulation clock
 }
 function writeBack3(index: number, tag: string, result: number): void {
     if (!isBusAvailable()) {
@@ -918,17 +908,9 @@ function writeBack3(index: number, tag: string, result: number): void {
 
     // Clear the reservation station
     LoadBuffer.buffers[index].op = InstructionTypeEnum.NONE;
-    LoadBuffer.buffers[index].tag = "";
     LoadBuffer.buffers[index].busy = 0;
     LoadBuffer.buffers[index].address = 0;
 
-    // Simulate bus usage for a cycle
-    setTimeout(() => {
-        // Clear the bus after one cycle
-        bus.tag = "";
-        bus.value = 0;
-        console.log("Bus cleared.");
-    }, 1000); // Adjust timeout based on your simulation clock
 }
 
 function writeBack() {
@@ -1089,7 +1071,7 @@ function printTomasuloSystemReservationStations(): void {
     console.table(ReservationStationInteger.stations);
 }
 
-function printTomasuloSystemBuffers(){
+function printTomasuloSystemBuffers() {
     console.log("Load Buffer:");
     console.table(LoadBuffer.buffers);
     console.log("Store Buffer:");
@@ -1099,18 +1081,24 @@ function printTomasuloSystemRegisterFile(): void {
     console.log("Register File:");
     console.table(registerFile);
 }
+function printInstructionQueue(): void {
+    console.log("Instruction Queue:");
+    console.table(instructionQueue);
+}
 
-function printTomasuloSystem():void{
+function printTomasuloSystem(): void {
     printTomasuloSystemReservationStations();
     printTomasuloSystemBuffers();
     printTomasuloSystemRegisterFile();
+    printInstructionQueue();
 }
 
-export function simulateStep(): void {
+export function simulateStep() {
+    writeBack();
+    execute();
     issue();
     printTomasuloSystem();
-    // execute();
-    // writeBack();
+    instructionQueue.pop();
     tomasuloSystem.clock++;
-    console.log(`tomasuloSystem ${tomasuloSystem}`);
+
 }

@@ -3,6 +3,7 @@
 import React, { useEffect } from "react";
 import { Config } from "../App";
 import { TInstruction } from "../backend/types";
+import { initCache, initMemory } from "../backend/memory";
 
 interface SimulatorViewProps {
 	config: Config; // Ensure this property exists on SimulatorViewProps
@@ -13,7 +14,9 @@ const SimulatorView: React.FC<SimulatorViewProps> = ({
 	instructionMemory,
 }) => {
 	useEffect(() => {
-		console.log("config: ", config);
+		initMemory();
+		initCache();
+		// console.log("config: ", config);
 		// console.log("instructionMemory: ", instructionMemory);
 		// console.log("cache size: "));
 	}, []);
