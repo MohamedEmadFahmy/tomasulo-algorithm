@@ -16,10 +16,15 @@ import { userInput } from "./tomasulo";
 const cacheSize: number = userInput.cacheSize; //No Of Blocks
 const cacheBlockSize: number = userInput.cacheBlockSize; //Size Of Block
 // Global variables
+
 const memorySize: number = 2048;
 let cacheMissFlag: boolean = false;
-const cacheHitLatency: number = 1;
-const cacheMissPenalty: number = 1;
+export const cacheHitLatency: number = 0;
+
+// set cycle remaining of load and store instructions to cacheMissPenalty
+export const cacheMissPenalty: number = 1;
+
+let PC = 0;
 
 //memory
 
@@ -30,6 +35,7 @@ export const MainMemory: Memory = {
 export const InstructionMemory = {
     //an array of all instructions entered by the user
     instructions: userInput.programInstructions,
+    PC: PC,
 }
 
 //instruction memory
@@ -53,6 +59,62 @@ export function initCache() {
         };
     }
 }
+
+// ***************** Load and Store Functions *****************
+
+// Load Functions
+
+export function loadWordCache(address: number): number {
+    if (checkForCacheMiss(address)) {
+        console.log("Entered in read");
+        //store the block in first empty position in cache
+        const blockIndex = findEmptyBlockInCache();
+        DataCache.cache[blockIndex].address = [address, address + cacheBlockSize - 1];
+        fetchBlockfromMem(address, blockIndex);
+    }
+    return readWordFromCache(address);
+}
+
+export function loadDoubleCache(address: number) {
+    if (checkForCacheMiss(address)) {
+        const blockIndex = findEmptyBlockInCache();
+        DataCache.cache[blockIndex].address = [address, address + cacheBlockSize - 1];
+        fetchBlockfromMem(address, blockIndex);
+    }
+    return readDoubleFromCache(address);
+}
+
+// Store Functions
+
+export function storeWordCache(value: number, address: number) {
+    if (checkForCacheMiss(address)) {
+        //store the block in first empty position in cache
+        const blockIndex = findEmptyBlockInCache();
+        DataCache.cache[blockIndex].address = [address, address + cacheBlockSize - 1];
+        writeThrough32(value, address);
+        fetchBlockfromMem(address, blockIndex);
+    } else {
+        // Write Thr\
+        writeWordOnCache(value, address);
+        writeThrough32(value, address);
+    }
+}
+
+export function storeDoubleCache(value: number, address: number) {
+    if (checkForCacheMiss(address)) {
+        //store the block in first empty position in cache
+        const blockIndex = findEmptyBlockInCache();
+        DataCache.cache[blockIndex].address = [address, address + cacheBlockSize - 1];
+        writeThrough64(value, address);
+        fetchBlockfromMem(address, blockIndex);
+    } else {
+        // Write Thr\
+        writeDoubleOnCache(value, address);
+        writeThrough64(value, address);
+    }
+}
+
+// ***************** Helper Functions *****************
 
 export function printMemory() {
     for (let i = 0; i < MainMemory.memory.length; i++) {
@@ -213,59 +275,13 @@ function readDoubleFromCache(address: number): number {
     return getValue(returnedArray, 8);
 }
 
-export function loadWordCache(address: number): number {
-    if (checkForCacheMiss(address)) {
-        console.log("Entered in read");
-        //store the block in first empty position in cache
-        const blockIndex = findEmptyBlockInCache();
-        DataCache.cache[blockIndex].address = [address, address + cacheBlockSize - 1];
-        fetchBlockfromMem(address, blockIndex);
-    }
-    return readWordFromCache(address);
-}
 
-export function loadDoubleCache(address: number) {
-    if (checkForCacheMiss(address)) {
-        const blockIndex = findEmptyBlockInCache();
-        DataCache.cache[blockIndex].address = [address, address + cacheBlockSize - 1];
-        fetchBlockfromMem(address, blockIndex);
-    }
-    return readDoubleFromCache(address);
-}
-
-export function storeWordCache(value: number, address: number) {
-    if (checkForCacheMiss(address)) {
-        //store the block in first empty position in cache
-        const blockIndex = findEmptyBlockInCache();
-        DataCache.cache[blockIndex].address = [address, address + cacheBlockSize - 1];
-        writeThrough32(value, address);
-        fetchBlockfromMem(address, blockIndex);
-    } else {
-        // Write Thr\
-        writeWordOnCache(value, address);
-        writeThrough32(value, address);
-    }
-}
 
 function checkIfAddressIsInRange(address: number, range: [number, number]) {
     if (address <= range[1] && address >= range[0]) {
         return true;
     } else {
         return false;
-    }
-}
-
-export function storeDoubleCache(value: number, address: number) {
-    if (checkForCacheMiss(address)) {
-        //store the block in first empty position in cache
-        const blockIndex = findEmptyBlockInCache();
-        DataCache.cache[blockIndex].address = [address, address + cacheBlockSize - 1];
-        writeThrough64(value, address);
-        fetchBlockfromMem(address, blockIndex);
-    } else {
-        // Write Thr\
-        writeDoubleOnCache(value, address);
-        writeThrough64(value, address);
     }
 }
 
@@ -277,7 +293,7 @@ function writeThrough64(value: number, address: number) {
     storeDouble(value, address);
 }
 
-function checkForCacheMiss(address: number) {
+export function checkForCacheMiss(address: number) {
     for (let i = 0; i < cacheSize; i++) {
         if (checkIfAddressIsInRange(address, DataCache.cache[i].address)) {
             cacheMissFlag = false;

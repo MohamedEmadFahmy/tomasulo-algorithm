@@ -75,6 +75,7 @@ export type TBufferRow = {
   address: number;
   V?: number;
   Q?: string;
+  cyclesRemaining: number;
 };
 
 export type TBuffer = {

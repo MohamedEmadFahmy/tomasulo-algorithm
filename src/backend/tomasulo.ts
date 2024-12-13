@@ -1,4 +1,8 @@
-import { MainMemory, DataCache, InstructionMemory } from "./memory";
+import {
+    MainMemory, DataCache, InstructionMemory, initMemory, initCache, loadWordCache,
+    loadDoubleCache, storeWordCache, storeDoubleCache, checkForCacheMiss,
+    cacheMissPenalty, cacheHitLatency
+} from "./memory";
 import { Memory, TInstruction, TReservationStationRow, TReservationStation, TBuffer, TRegisterFile, InstructionTypeEnum, TCDB, TBufferRow, ReservationStationTypeEnum } from "./types";
 
 /* conventions:
@@ -17,23 +21,14 @@ export default function test() {
     console.log(int8.BYTES_PER_ELEMENT); // 1
 }
 
-
-
 export const userInput = {
     noOfAddSubRS: 3,
     noOfMulDivRS: 3,
     noOfLoadBuffers: 3,
     noOfStoreBuffers: 3,
+    noOfIntegerAddSubRS: 3,
     cacheSize: 16,
     cacheBlockSize: 4,
-    latency: {
-        ADD: 2,
-        SUB: 2,
-        MUL: 10,
-        DIV: 40,
-        LOAD: 2,
-        STORE: 2,
-    },
     programInstructions: [
         { type: InstructionTypeEnum.DADDI, d: "R1", s: "R2", t: "10", latency: 2 },
         { type: InstructionTypeEnum.DSUBI, d: "R2", s: "R1", t: "10", latency: 2 },
@@ -53,7 +48,6 @@ export const userInput = {
     ]
 };
 // initialise system
-
 
 const bus: TCDB = {
     tag: "",
@@ -109,6 +103,7 @@ const LoadBuffer: TBuffer = {
         tag: `LD${i + 1}`,
         busy: 0,
         address: 0,
+        cyclesRemaining: 0,
     })),
 };
 
@@ -119,6 +114,7 @@ const StoreBuffer: TBuffer = {
         tag: `STR${i + 1}`,
         busy: 0,
         address: 0,
+        cyclesRemaining: 0,
     })),
 };
 
@@ -155,7 +151,6 @@ const registerFile: TRegisterFile[] = [
     { tag: "R29", Q: "0", content: 0 },
     { tag: "R30", Q: "0", content: 0 },
     { tag: "R31", Q: "0", content: 0 },
-    { tag: "R32", Q: "0", content: 0 },
     { tag: "F1", Q: "0", content: 0 },
     { tag: "F2", Q: "0", content: 0 },
     { tag: "F3", Q: "0", content: 0 },
@@ -187,10 +182,13 @@ const registerFile: TRegisterFile[] = [
     { tag: "F29", Q: "0", content: 0 },
     { tag: "F30", Q: "0", content: 0 },
     { tag: "F31", Q: "0", content: 0 },
-    { tag: "F32", Q: "0", content: 0 }
 ];
 
 const instructionQueue: TInstruction[] = [];
+
+//Initialise memory and cache
+initMemory();
+initCache();
 
 //initialize the system
 const tomasuloSystem = {
@@ -211,15 +209,18 @@ const tomasuloSystem = {
     instructionQueue: instructionQueue,
 }
 
+
+
 // Instruction Queue
 
 function fetchInstruction(): void {
-    const instruction = InstructionMemory.instructions.shift();
+    const instruction = InstructionMemory.instructions[InstructionMemory.PC++];
     if (!instruction) {
         console.log("No more instructions to fetch.");
         return;
     }
     instructionQueue.push(instruction);
+    // [1] --> [1,2]
 }
 
 function issue(): void {
@@ -282,12 +283,15 @@ function issueToReservationStation1(instruction: TInstruction): void {
         return;
     }
 
+    //set the tag in the register file
+    registerFile.find((r) => r.tag === instruction.d)!.Q = rs.tag;
+
     //loading operands
     rs.op = instruction.type;
     rs.VJ = registerFile.find((r) => r.tag === instruction.s)!.content;
     rs.VK = registerFile.find((r) => r.tag === instruction.t)!.content;
-    rs.QJ = registerFile.find((r) => r.tag === instruction.s)!.Q ?? "0";
-    rs.QK = registerFile.find((r) => r.tag === instruction.t)!.Q;  
+    rs.QJ = registerFile.find((r) => r.tag === instruction.s)!.Q;
+    rs.QK = registerFile.find((r) => r.tag === instruction.t)!.Q;
     rs.busy = 1;
     rs.cyclesRemaining = instruction.latency;
 }
@@ -298,12 +302,16 @@ function issueToReservationStation2(instruction: TInstruction): void {
         console.log("No available reservation station for MUL/DIV operation.");
         return;
     }
+
+    //set the tag in the register file
+    registerFile.find((r) => r.tag === instruction.d)!.Q = rs.tag;
+
     //loading operands
     rs.op = instruction.type;
     rs.VJ = registerFile.find((r) => r.tag === instruction.s)!.content;
     rs.VK = registerFile.find((r) => r.tag === instruction.t)!.content;
     rs.QJ = registerFile.find((r) => r.tag === instruction.s)!.Q;
-    rs.QK = registerFile.find((r) => r.tag === instruction.t)!.Q;  
+    rs.QK = registerFile.find((r) => r.tag === instruction.t)!.Q;
     rs.busy = 1;
     rs.cyclesRemaining = instruction.latency;
 }
@@ -315,19 +323,22 @@ function issueToReservationStationInteger(instruction: TInstruction): void {
         return;
     }
 
+    //set the tag in the register file
+    registerFile.find((r) => r.tag === instruction.d)!.Q = rs.tag;
+
     //loading operands
     rs.op = instruction.type;
     rs.VJ = registerFile.find((r) => r.tag === instruction.s)!.content;
-    rs.VK = parseInt(instruction.t);
+    rs.VK = registerFile.find((r) => r.tag === instruction.s)!.content;
     rs.QJ = registerFile.find((r) => r.tag === instruction.s)!.Q;
-    rs.QK = registerFile.find((r) => r.tag === instruction.t)!.Q;  
+    rs.QK = registerFile.find((r) => r.tag === instruction.t)!.Q;
     rs.busy = 1;
     rs.cyclesRemaining = instruction.latency;
 }
 
 function issueToLoadBuffer(instruction: TInstruction): void {
     const buffer = LoadBuffer.buffers.find((buffer) => buffer.busy === 0);
-    const checkStoreBuffer = StoreBuffer.buffers.find((buf) => buf.address === parseInt(instruction.t) && buf.busy === 1);
+    const checkStoreBuffer = StoreBuffer.buffers.find((buf) => buf.address === parseInt(instruction.s) && buf.busy === 1);
     if (checkStoreBuffer) {
         console.log("Store buffer with the same effective address found.");
         //stall
@@ -339,16 +350,20 @@ function issueToLoadBuffer(instruction: TInstruction): void {
         return;
     }
 
+    //set the tag in the register file
+    registerFile.find((r) => r.tag === instruction.d)!.Q = buffer.tag;
+
     //loading operands
     buffer.op = instruction.type;
-    buffer.address = registerFile.find((r) => r.tag === instruction.s)!.content;
+    buffer.address = parseInt(instruction.s);
     buffer.busy = 1;
+    buffer.cyclesRemaining = checkForCacheMiss(parseInt(instruction.s)) ? cacheMissPenalty : cacheHitLatency
 }
 
 function issueToStoreBuffer(instruction: TInstruction): void {
     const buffer = StoreBuffer.buffers.find((buffer) => buffer.busy === 0);
-    const checkStoreBuffer = StoreBuffer.buffers.find((buf) => buf.address === parseInt(instruction.t) && buf.busy === 1);
-    const checkLoadBuffer = LoadBuffer.buffers.find((buf) => buf.address === parseInt(instruction.t) && buf.busy === 1);
+    const checkStoreBuffer = StoreBuffer.buffers.find((buf) => buf.address === parseInt(instruction.s) && buf.busy === 1);
+    const checkLoadBuffer = LoadBuffer.buffers.find((buf) => buf.address === parseInt(instruction.s) && buf.busy === 1);
     if (checkStoreBuffer || checkLoadBuffer) {
         console.log("Store or Load buffer with the same effective address found.");
         //stall
@@ -359,12 +374,16 @@ function issueToStoreBuffer(instruction: TInstruction): void {
         return;
     }
 
+    //set the tag in the register file
+    registerFile.find((r) => r.tag === instruction.d)!.Q = buffer.tag;
+
     //loading operands
     buffer.op = instruction.type;
-    buffer.address = registerFile.find((r) => r.tag === instruction.s)!.content;
-    buffer.V = registerFile.find((r) => r.tag === instruction.t)!.content;
-    buffer.Q = registerFile.find((r) => r.tag === instruction.t)!.Q;
+    buffer.address = parseInt(instruction.s);
+    buffer.V = registerFile.find((r) => r.tag === instruction.d)!.content;
+    buffer.Q = registerFile.find((r) => r.tag === instruction.d)!.Q;
     buffer.busy = 1;
+    buffer.cyclesRemaining = checkForCacheMiss(parseInt(instruction.s)) ? cacheMissPenalty : cacheHitLatency
 }
 
 
@@ -382,49 +401,57 @@ function execute_ADD(rs: TReservationStationRow): number {
     const VJ = rs.VJ;
     const VK = rs.VK;
 
-    while (rs.cyclesRemaining > 0) {
-        rs.cyclesRemaining--;
+    if (rs.cyclesRemaining <= 0) {
+        const result = VJ + VK;
+
+        return result;
         console.log(`ADD operation in progress, cycles remaining: ${rs.cyclesRemaining}`);
     }
 
-    const result = VJ + VK;
-    console.log(`ADD operation complete, result: ${result}`);
+    else {
+        rs.cyclesRemaining--;
+        return Number.MIN_VALUE;
 
-    rs.cyclesRemaining = 0;
+    }
 
-    return result;
+
+
 }
 
 function execute_SUB(rs: TReservationStationRow): number {
     const VJ = rs.VJ;
     const VK = rs.VK;
 
-    while (rs.cyclesRemaining > 0) {
-        rs.cyclesRemaining--;
+    if (rs.cyclesRemaining <= 0) {
+        const result = VJ - VK;
+
+        return result;
         console.log(`SUB operation in progress, cycles remaining: ${rs.cyclesRemaining}`);
     }
 
-    const result = VJ - VK;
-    console.log(`SUB operation complete, result: ${result}`);
+    else {
+        rs.cyclesRemaining--;
+        return Number.MIN_VALUE;
 
-    rs.cyclesRemaining = 0;
-    return result;
+    }
 }
 
 function execute_MUL(rs: TReservationStationRow): number {
     const VJ = rs.VJ;
     const VK = rs.VK;
 
-    while (rs.cyclesRemaining > 0) {
-        rs.cyclesRemaining--;
+    if (rs.cyclesRemaining <= 0) {
+        const result = VJ * VK;
+
+        return result;
         console.log(`MUL operation in progress, cycles remaining: ${rs.cyclesRemaining}`);
     }
 
-    const result = VJ * VK;
-    console.log(`MUL operation complete, result: ${result}`);
+    else {
+        rs.cyclesRemaining--;
+        return Number.MIN_VALUE;
 
-    rs.cyclesRemaining = 0;
-    return result;
+    }
 }
 
 function execute_DIV(rs: TReservationStationRow): number {
@@ -436,36 +463,84 @@ function execute_DIV(rs: TReservationStationRow): number {
         throw new Error("Division by zero");
     }
 
-    while (rs.cyclesRemaining > 0) {
-        rs.cyclesRemaining--;
+    if (rs.cyclesRemaining <= 0) {
+        const result = VJ / VK;
+
+        return result;
         console.log(`DIV operation in progress, cycles remaining: ${rs.cyclesRemaining}`);
     }
 
-    const result = VJ / VK;
-    console.log(`DIV operation complete, result: ${result}`);
+    else {
+        rs.cyclesRemaining--;
+        return Number.MIN_VALUE;
 
-    rs.cyclesRemaining = 0;
-    return result;
+    }
 }
 
-function execute_STR(rs: TBufferRow): void {
-    const value = rs.V;
-    const address = rs.address;
-    // Prevent division by zero
-    if (value !== undefined) memory[address] = value;
-    else throw new Error(" value is undefined");
-}
+// function execute_STR(rs: TBufferRow): void {
+//     const value = rs.V;
+//     const address = rs.address;
+//     // Prevent division by zero
+//     if (value !== undefined) memory[address] = value;
+//     else throw new Error(" value is undefined");
+// }
 
 function isReady(TReservationStationRow: TReservationStationRow): boolean {
-    if (TReservationStationRow.VJ === null || TReservationStationRow.VK === null) return false;
+    if (TReservationStationRow.QJ !== '0' || TReservationStationRow.QK !== '0') return false;
     else return true;
 }
 
 function isReady2(TBufferRow: TBufferRow): boolean {
-    if (TBufferRow.V === undefined) return false;
+    if (TBufferRow.Q !== '0') return false;
     else return true;
 }
+
 // Function to execute instructions from reservation stations
+function execResInt(reservationStation:TReservationStation):void{
+    for (let i = 0; i < reservationStation.stations.length; i++) {
+        const rs = reservationStation.stations[i];
+        const op = get_op(rs); // Get the operation type from the reservation station
+        switch (op) {
+            case InstructionTypeEnum.DADDI:
+                if (isReady(rs)) {
+                    console.log(`Executing immediate operation ${op} with VJ: ${rs.VJ} and immediate VK: ${rs.VK}`);
+                    const result = execute_ADD(rs);
+                    if (rs.cyclesRemaining <= 0)
+                        writeBack1(i,rs.tag, result);
+                } else {
+                    console.log(`${op} is not ready`);
+                    if (bus.tag === rs.QJ) {
+                        rs.VJ = bus.value;
+                        rs.QJ = '0';
+                    }
+                    if (bus.tag === rs.QK) {
+                        rs.VK = bus.value;
+                        rs.QK = '0';
+                    }
+
+                }
+                break;
+            case InstructionTypeEnum.DSUBI:
+                if (isReady(rs)) {
+                    console.log(`Executing immediate operation ${op} with VJ: ${rs.VJ} and immediate VK: ${rs.VK}`);
+                    const result = execute_SUB(rs);
+                    if (rs.cyclesRemaining <= 0)
+                        writeBack1(i,rs.tag, result);
+                } else {
+                    console.log(`${op} is not ready`);
+                    if (bus.tag === rs.QJ) {
+                        rs.VJ = bus.value;
+                        rs.QJ = '0';
+                    }
+                    if (bus.tag === rs.QK) {
+                        rs.VK = bus.value;
+                        rs.QK = '0';
+                    }
+
+                }
+                break;
+        }
+}
 function execRes1(reservationStation: TReservationStation): void {
     for (let i = 0; i < reservationStation.stations.length; i++) {
         const rs = reservationStation.stations[i];
@@ -473,70 +548,22 @@ function execRes1(reservationStation: TReservationStation): void {
 
         // Execute logic based on operation type
         switch (op) {
-            case InstructionTypeEnum.DADDI:
-                if (isReady(rs)) {
-                    console.log(`Executing immediate operation ${op} with VJ: ${rs.VJ} and immediate VK: ${rs.VK}`);
-                    const result = execute_ADD(rs);
-                    writeBack1(rs, result);
-                } else {
-                    console.log(`${op} is not ready`);
-                    if (bus.tag === rs.QJ) {
-                        rs.VJ = bus.value;
-                        rs.QJ = "";
-                    }
-                    if (bus.tag === rs.QK) {
-                        rs.VK = bus.value;
-                        rs.QK = "";
-                    }
-                    if (isReady(rs)) {
-                        const result = execute_ADD(rs);
-                        writeBack1(rs, result);
-
-                        // writeBack1(rs.tag,result);
-                    }
-                }
-                break;
-            case InstructionTypeEnum.DSUBI:
-                if (isReady(rs)) {
-                    console.log(`Executing immediate operation ${op} with VJ: ${rs.VJ} and immediate VK: ${rs.VK}`);
-                    const result = execute_SUB(rs);
-                    writeBack1(rs, result);
-                } else {
-                    console.log(`${op} is not ready`);
-                    if (bus.tag === rs.QJ) {
-                        rs.VJ = bus.value;
-                        rs.QJ = "";
-                    }
-                    if (bus.tag === rs.QK) {
-                        rs.VK = bus.value;
-                        rs.QK = "";
-                    }
-                    if (isReady(rs)) {
-                        const result = execute_SUB(rs);
-
-                        writeBack1(rs, result);
-                    }
-                }
-                break;
+            
             case InstructionTypeEnum.ADD_D:
                 if (isReady(rs)) {
                     console.log(`Executing immediate operation ${op} with VJ: ${rs.VJ} and immediate VK: ${rs.VK}`);
                     const result = execute_ADD(rs);
-                    writeBack1(rs, result);
+                    if (rs.cyclesRemaining <= 0)
+                        writeBack1(i,rs.tag, result);
                 } else {
                     console.log(`${op} is not ready`);
                     if (bus.tag === rs.QJ) {
                         rs.VJ = bus.value;
-                        rs.QJ = "";
+                        rs.QJ = '0';
                     }
                     if (bus.tag === rs.QK) {
                         rs.VK = bus.value;
-                        rs.QK = "";
-                    }
-                    if (isReady(rs)) {
-                        const result = execute_ADD(rs);
-
-                        writeBack1(rs, result);
+                        rs.QK = '0';
                     }
                 }
                 break;
@@ -544,22 +571,19 @@ function execRes1(reservationStation: TReservationStation): void {
                 if (isReady(rs)) {
                     console.log(`Executing immediate operation ${op} with VJ: ${rs.VJ} and immediate VK: ${rs.VK}`);
                     const result = execute_ADD(rs);
-                    writeBack1(rs, result);
+                    if (rs.cyclesRemaining <= 0)
+                        writeBack1(i,rs.tag, result);
                 } else {
                     console.log(`${op} is not ready`);
                     if (bus.tag === rs.QJ) {
                         rs.VJ = bus.value;
-                        rs.QJ = "";
+                        rs.QJ = '0';
                     }
                     if (bus.tag === rs.QK) {
                         rs.VK = bus.value;
-                        rs.QK = "";
+                        rs.QK = '0';
                     }
-                    if (isReady(rs)) {
-                        const result = execute_ADD(rs);
 
-                        writeBack1(rs, result);
-                    }
                 }
                 break;
 
@@ -567,44 +591,38 @@ function execRes1(reservationStation: TReservationStation): void {
                 if (isReady(rs)) {
                     console.log(`Executing immediate operation ${op} with VJ: ${rs.VJ} and immediate VK: ${rs.VK}`);
                     const result = execute_SUB(rs);
-                    writeBack1(rs, result);
+                    if (rs.cyclesRemaining <= 0)
+                        writeBack1(i,rs.tag, result);
                 } else {
                     console.log(`${op} is not ready`);
                     if (bus.tag === rs.QJ) {
                         rs.VJ = bus.value;
-                        rs.QJ = "";
+                        rs.QJ = '0';
                     }
                     if (bus.tag === rs.QK) {
                         rs.VK = bus.value;
-                        rs.QK = "";
+                        rs.QK = '0';
                     }
-                    if (isReady(rs)) {
-                        const result = execute_SUB(rs);
 
-                        writeBack1(rs, result);
-                    }
                 }
                 break;
             case InstructionTypeEnum.SUB_S:
                 if (isReady(rs)) {
                     console.log(`Executing immediate operation ${op} with VJ: ${rs.VJ} and immediate VK: ${rs.VK}`);
                     const result = execute_SUB(rs);
-                    writeBack1(rs, result);
+                    if (rs.cyclesRemaining <= 0)
+                        writeBack1(i,rs.tag, result);
                 } else {
                     console.log(`${op} is not ready`);
                     if (bus.tag === rs.QJ) {
                         rs.VJ = bus.value;
-                        rs.QJ = "";
+                        rs.QJ = '0';
                     }
                     if (bus.tag === rs.QK) {
                         rs.VK = bus.value;
-                        rs.QK = "";
+                        rs.QK = '0';
                     }
-                    if (isReady(rs)) {
-                        const result = execute_SUB(rs);
 
-                        writeBack1(rs, result);
-                    }
                 }
                 break;
             default:
@@ -625,42 +643,38 @@ function execRes2(reservationStation: TReservationStation): void {
                 if (isReady(rs)) {
                     console.log(`Executing immediate operation ${op} with VJ: ${rs.VJ} and immediate VK: ${rs.VK}`);
                     const result = execute_MUL(rs);
-                    writeBack1(rs, result);
+                    if (rs.cyclesRemaining <= 0)
+                        writeBack2(i,rs.tag, result);
                 } else {
                     console.log(`${op} is not ready`);
                     if (bus.tag === rs.QJ) {
                         rs.VJ = bus.value;
-                        rs.QJ = "";
+                        rs.QJ = '0';
                     }
                     if (bus.tag === rs.QK) {
                         rs.VK = bus.value;
-                        rs.QK = "";
+                        rs.QK = '0';
                     }
-                    if (isReady(rs)) {
-                        const result = execute_MUL(rs);
-                        writeBack1(rs, result);
-                    }
+
                 }
                 break;
             case InstructionTypeEnum.MUL_S:
                 if (isReady(rs)) {
                     console.log(`Executing immediate operation ${op} with VJ: ${rs.VJ} and immediate VK: ${rs.VK}`);
                     const result = execute_MUL(rs);
-                    writeBack1(rs, result);
+                    if (rs.cyclesRemaining <= 0)
+                        writeBack2(i,rs.tag, result);
                 } else {
                     console.log(`${op} is not ready`);
                     if (bus.tag === rs.QJ) {
                         rs.VJ = bus.value;
-                        rs.QJ = "";
+                        rs.QJ = '0';
                     }
                     if (bus.tag === rs.QK) {
                         rs.VK = bus.value;
-                        rs.QK = "";
+                        rs.QK = '0';
                     }
-                    if (isReady(rs)) {
-                        const result = execute_MUL(rs);
-                        writeBack1(rs, result);
-                    }
+
                 }
                 break;
 
@@ -668,42 +682,38 @@ function execRes2(reservationStation: TReservationStation): void {
                 if (isReady(rs)) {
                     console.log(`Executing immediate operation ${op} with VJ: ${rs.VJ} and immediate VK: ${rs.VK}`);
                     const result = execute_DIV(rs);
-                    writeBack1(rs, result);
+                    if (rs.cyclesRemaining <= 0)
+                        writeBack2(i,rs.tag, result);
                 } else {
                     console.log(`${op} is not ready`);
                     if (bus.tag === rs.QJ) {
                         rs.VJ = bus.value;
-                        rs.QJ = "";
+                        rs.QJ = '0';
                     }
                     if (bus.tag === rs.QK) {
                         rs.VK = bus.value;
-                        rs.QK = "";
+                        rs.QK = '0';
                     }
-                    if (isReady(rs)) {
-                        const result = execute_DIV(rs);
-                        writeBack1(rs, result);
-                    }
+
                 }
                 break;
             case InstructionTypeEnum.DIV_S:
                 if (isReady(rs)) {
                     console.log(`Executing immediate operation ${op} with VJ: ${rs.VJ} and immediate VK: ${rs.VK}`);
                     const result = execute_DIV(rs);
-                    writeBack1(rs, result);
+                    if (rs.cyclesRemaining <= 0)
+                        writeBack2(i,rs.tag, result);
                 } else {
                     console.log(`${op} is not ready`);
                     if (bus.tag === rs.QJ) {
                         rs.VJ = bus.value;
-                        rs.QJ = "";
+                        rs.QJ = '0';
                     }
                     if (bus.tag === rs.QK) {
                         rs.VK = bus.value;
-                        rs.QK = "";
+                        rs.QK = '0';
                     }
-                    if (isReady(rs)) {
-                        const result = execute_DIV(rs);
-                        writeBack1(rs, result);
-                    }
+
                 }
                 break;
 
@@ -718,29 +728,42 @@ function execLoad(Tbuffer: TBuffer): void {
         const rs = Tbuffer.buffers[i];
         const op = get_op2(rs); // Get the operation type from the reservation station
 
+
         // Execute logic based on operation type
-        switch (op) {
-            case InstructionTypeEnum.LW:
-                writeBack2(rs, rs.address);
-                break;
-            case InstructionTypeEnum.LD:
-                writeBack2(rs, rs.address);
+        if (rs.cyclesRemaining <= 0) {
+            switch (op) {
+                case InstructionTypeEnum.LW: {
+                    const word = loadWordCache(rs.address);
+                    writeBack3(i,rs.tag, word);
+                }
+                    break;
+                case InstructionTypeEnum.LD: {
+                    const word = loadDoubleCache(rs.address);
+                    writeBack2(i,rs.tag, word);
+                }
+                    break;
 
-                break;
+                case InstructionTypeEnum.L_D: {
+                    const word = loadDoubleCache(rs.address);
+                    writeBack2(i,rs.tag, word);
 
-            case InstructionTypeEnum.L_D:
-                writeBack2(rs, rs.address);
+                }
+                    break;
+                case InstructionTypeEnum.L_S: {
+                    const word = loadWordCache(rs.address);
+                    writeBack2(i,rs.tag, word);
+                }
+                    break;
 
-                break;
-            case InstructionTypeEnum.L_S:
-                writeBack2(rs, rs.address);
-
-                break;
-
-            default:
-                console.error(`Unknown operation: ${op}`);
-                break;
+                default:
+                    console.error(`Unknown operation: ${op}`);
+                    break;
+            }
         }
+        else {
+            rs.cyclesRemaining--;
+        }
+
     }
 }
 
@@ -748,93 +771,105 @@ function execStore(Tbuffer: TBuffer): void {
     for (let i = 0; i < Tbuffer.buffers.length; i++) {
         const rs = Tbuffer.buffers[i];
         const op = get_op2(rs); // Get the operation type from the reservation station
+        if (rs.cyclesRemaining <= 0) {
+            // Execute logic based on operation type
+            switch (op) {
+                case InstructionTypeEnum.SW:
+                    if (isReady2(rs)) {
+                        const value = rs.V!;
+                        const address = rs.address!;
+                        storeWordCache(value, address);
+                        writeBack4(i);
+                    } else {
+                        if (bus.tag === rs.Q) {
+                            rs.V = bus.value;
+                            rs.Q = '0';
+                        }
 
-        // Execute logic based on operation type
-        switch (op) {
-            case InstructionTypeEnum.SW:
-                if (isReady2(rs)) {
-                    execute_STR(rs);
-                } else {
-                    if (bus.tag === rs.Q) {
-                        rs.V = bus.value;
-                        rs.Q = undefined;
                     }
+                    break;
+                case InstructionTypeEnum.SD:
                     if (isReady2(rs)) {
-                        execute_STR(rs);
-                    }
-                }
-                break;
-            case InstructionTypeEnum.SD:
-                if (isReady2(rs)) {
-                    execute_STR(rs);
-                } else {
-                    if (bus.tag === rs.Q) {
-                        rs.V = bus.value;
-                        rs.Q = undefined;
-                    }
-                    if (isReady2(rs)) {
-                        execute_STR(rs);
-                    }
-                }
-                break;
+                        const value = rs.V!;
+                        const address = rs.address!;
+                        storeDoubleCache(value, address);
+                        writeBack4(i);
+                    } else {
+                        if (bus.tag === rs.Q) {
+                            rs.V = bus.value;
+                            rs.Q = '0';
+                        }
 
-            case InstructionTypeEnum.S_S:
-                if (isReady2(rs)) {
-                    execute_STR(rs);
-                } else {
-                    if (bus.tag === rs.Q) {
-                        rs.V = bus.value;
-                        rs.Q = undefined;
                     }
-                    if (isReady2(rs)) {
-                        execute_STR(rs);
-                    }
-                }
-                break;
-            case InstructionTypeEnum.S_D:
-                if (isReady2(rs)) {
-                    execute_STR(rs);
-                } else {
-                    if (bus.tag === rs.Q) {
-                        rs.V = bus.value;
-                        rs.Q = undefined;
-                    }
-                    if (isReady2(rs)) {
-                        execute_STR(rs);
-                    }
-                }
-                break;
+                    break;
 
-            default:
-                console.error(`Unknown operation: ${op}`);
-                break;
+                case InstructionTypeEnum.S_S:
+                    if (isReady2(rs)) {
+                        const value = rs.V!;
+                        const address = rs.address!;
+                        storeWordCache(value, address);
+                        writeBack4(i);
+                    } else {
+                        if (bus.tag === rs.Q) {
+                            rs.V = bus.value;
+                            rs.Q = '0';
+                        }
+
+                    }
+                    break;
+                case InstructionTypeEnum.S_D:
+                    if (isReady2(rs)) {
+                        const value = rs.V!;
+                        const address = rs.address!;
+                        storeDoubleCache(value, address);
+                        writeBack4(i);
+                    } else {
+                        if (bus.tag === rs.Q) {
+                            rs.V = bus.value;
+                            rs.Q = '0';
+                        }
+
+                    }
+                    break;
+
+                default:
+                    console.error(`Unknown operation: ${op}`);
+                    break;
+            }
         }
+        else {
+            rs.cyclesRemaining--;
+        }
+
     }
 }
+
+function execBranch(): void {
+    // Implement branch logic here
+    
+}
+
 
 function isBusAvailable(): boolean {
     return bus.tag === "";
 }
-
-function writeBack1(rs: TReservationStationRow, result: number): void {
+function writeBackInt(index: number, tag: string, result: number): void {
     if (!isBusAvailable()) {
         console.log("Bus is not available");
         return;
     }
 
     // Publish the result to the bus
-    bus.tag = rs.tag;
+    bus.tag = tag;
     bus.value = result;
 
-    console.log(`Result ${result} from ${rs.tag} written to the bus.`);
-
     // Clear the reservation station
-    rs.tag = "";
-    rs.op = InstructionTypeEnum.NONE;
-    rs.VJ = 0;
-    rs.VK = 0;
-    rs.busy = 0;
-    rs.cyclesRemaining = 0;
+    ResvationStation1.stations[index].tag = "";
+    ResvationStation1.stations[index].op = InstructionTypeEnum.NONE;
+    ResvationStation1.stations[index].VJ = 0;
+    ResvationStation1.stations[index].VK = 0;
+    ResvationStation1.stations[index].busy = 0;
+    ResvationStation1.stations[index].cyclesRemaining = 0;
 
     // Simulate bus usage for a cycle
     setTimeout(() => {
@@ -844,24 +879,23 @@ function writeBack1(rs: TReservationStationRow, result: number): void {
         console.log("Bus cleared.");
     }, 1000); // Adjust timeout based on your simulation clock
 }
-
-function writeBack2(buffer: TBufferRow, result: number): void {
+function writeBack1(index: number, tag: string, result: number): void {
     if (!isBusAvailable()) {
         console.log("Bus is not available");
         return;
     }
 
     // Publish the result to the bus
-    bus.tag = buffer.tag;
+    bus.tag = tag;
     bus.value = result;
 
-    console.log(`Result ${result} from ${buffer.tag} written to the bus.`);
-
     // Clear the reservation station
-    buffer.op = InstructionTypeEnum.NONE;
-    buffer.tag = "";
-    buffer.busy = 0;
-    buffer.address = 0;
+    ResvationStation1.stations[index].tag = "";
+    ResvationStation1.stations[index].op = InstructionTypeEnum.NONE;
+    ResvationStation1.stations[index].VJ = 0;
+    ResvationStation1.stations[index].VK = 0;
+    ResvationStation1.stations[index].busy = 0;
+    ResvationStation1.stations[index].cyclesRemaining = 0;
 
     // Simulate bus usage for a cycle
     setTimeout(() => {
@@ -871,7 +905,74 @@ function writeBack2(buffer: TBufferRow, result: number): void {
         console.log("Bus cleared.");
     }, 1000); // Adjust timeout based on your simulation clock
 }
+function writeBack2(index: number, tag: string, result: number): void {
+    if (!isBusAvailable()) {
+        console.log("Bus is not available");
+        return;
+    }
 
+    // Publish the result to the bus
+    bus.tag = tag;
+    bus.value = result;
+
+    // Clear the reservation station
+    ResvationStation2.stations[index].tag = "";
+    ResvationStation2.stations[index].op = InstructionTypeEnum.NONE;
+    ResvationStation2.stations[index].VJ = 0;
+    ResvationStation2.stations[index].VK = 0;
+    ResvationStation2.stations[index].busy = 0;
+    ResvationStation2.stations[index].cyclesRemaining = 0;
+
+    // Simulate bus usage for a cycle
+    setTimeout(() => {
+        // Clear the bus after one cycle
+        bus.tag = "";
+        bus.value = 0;
+        console.log("Bus cleared.");
+    }, 1000); // Adjust timeout based on your simulation clock
+}
+function writeBack3(index:number,tag:string, result: number): void {
+    if (!isBusAvailable()) {
+        console.log("Bus is not available");
+        return;
+    }
+
+    // Publish the result to the bus
+    bus.tag = tag;
+    bus.value = result;
+
+
+    // Clear the reservation station
+    LoadBuffer.buffers[index].op = InstructionTypeEnum.NONE;
+    LoadBuffer.buffers[index].tag = "";
+    LoadBuffer.buffers[index].busy = 0;
+    LoadBuffer.buffers[index].address = 0;
+
+    // Simulate bus usage for a cycle
+    setTimeout(() => {
+        // Clear the bus after one cycle
+        bus.tag = "";
+        bus.value = 0;
+        console.log("Bus cleared.");
+    }, 1000); // Adjust timeout based on your simulation clock
+}
+function writeBack4(index:number): void {
+
+    // Clear the reservation station
+    StoreBuffer.buffers[index].op = InstructionTypeEnum.NONE;
+    StoreBuffer.buffers[index].tag = "";
+    StoreBuffer.buffers[index].busy = 0;
+    StoreBuffer.buffers[index].address = 0;
+    StoreBuffer.buffers[index].Q = '0';
+
+    // Simulate bus usage for a cycle
+    setTimeout(() => {
+        // Clear the bus after one cycle
+        bus.tag = "";
+        bus.value = 0;
+        console.log("Bus cleared.");
+    }, 1000); // Adjust timeout based on your simulation clock
+}
 function execute(): void {
     while (1) {
         // execRes1(ResvationStation1);
