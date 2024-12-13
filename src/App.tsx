@@ -4,7 +4,7 @@ import SimulatorView from "./components/SimulatorView";
 import { TInstruction } from "./backend/types";
 
 const App: React.FC = () => {
-	const [isStarted, setIsStarted] = useState<boolean>(true);
+	const [isStarted, setIsStarted] = useState<boolean>(false);
 
 	const [instructionMemory, setInstructionMemory] = useState<TInstruction[]>(
 		[]

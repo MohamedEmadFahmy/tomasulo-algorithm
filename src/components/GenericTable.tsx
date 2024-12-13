@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { GenericTableTypeEnum } from "../constants";
+import { register } from "module";
 
 interface TableColumn {
   key: string;
@@ -46,9 +47,10 @@ const storeBufferColumns = [
 ];
 
 // Instruction Memory Table
-const instructionMemoryColumns = [
-  { key: "address", header: "Address" },
-  { key: "instruction", header: "Instruction" },
+const dataMemoryColumns = [
+	{ key: "tag", header: "Tag" },
+	{ key: "Q", header: "Q" },
+	{ key: "content", header: "Data" },
 ];
 
 const GenericTable: React.FC<GenericTableProps> = ({
@@ -60,58 +62,65 @@ const GenericTable: React.FC<GenericTableProps> = ({
 }) => {
   const [columns, setColumns] = useState<TableColumn[]>([]);
 
-  useEffect(() => {
-    if (type === GenericTableTypeEnum.ReservationStations) {
-      setColumns(reservationStationsColumns);
-    } else if (type === GenericTableTypeEnum.LoadBuffer) {
-      setColumns(loadBufferColumns);
-    } else if (type === GenericTableTypeEnum.StoreBuffer) {
-      setColumns(storeBufferColumns);
-    } else if (type === GenericTableTypeEnum.InstructionMemory) {
-      setColumns(instructionMemoryColumns);
-    }
-  }, [type]);
+	useEffect(() => {
+		if (type === GenericTableTypeEnum.ReservationStations) {
+			setColumns(reservationStationsColumns);
+		} else if (type === GenericTableTypeEnum.LoadBuffer) {
+			setColumns(loadBufferColumns);
+		} else if (type === GenericTableTypeEnum.StoreBuffer) {
+			setColumns(storeBufferColumns);
+		} else if (type === GenericTableTypeEnum.RegisterFile) {
+			setColumns(registerFileColumns);
+		}
+	}, [type]);
 
-  return (
-    <div
-      className={`bg-white rounded-lg shadow-md overflow-hidden ${className}`}
-    >
-      <h2 className="text-xl font-bold bg-gray-100 p-3 border-b">{title}</h2>
-      {data?.length === 0 ? (
-        <div className="text-center p-4 text-gray-500">{emptyMessage}</div>
-      ) : (
-        <table className="w-full">
-          <thead>
-            <tr className="bg-gray-50">
-              {columns.map((column) => (
-                <th
-                  key={column.key}
-                  className="p-3 text-left font-semibold text-gray-600 border-b"
-                  style={{ width: column.width }}
-                >
-                  {column.header}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {data?.map((row, rowIndex) => (
-              <tr
-                key={rowIndex}
-                className="hover:bg-gray-100 transition-colors"
-              >
-                {columns.map((column) => (
-                  <td key={column.key} className="p-3 border-b">
-                    {String(row[column.key] ?? "")}
-                  </td>
-                ))}
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      )}
-    </div>
-  );
+	return (
+		<div
+			className={`bg-white rounded-lg shadow-md overflow-hidden ${className}`}
+		>
+			<h2 className="text-xl font-bold bg-gray-100 p-3 border-b">
+				{title}
+			</h2>
+			{data?.length === 0 ? (
+				<div className="text-center p-4 text-gray-500">
+					{emptyMessage}
+				</div>
+			) : (
+				<table className="w-full">
+					<thead>
+						<tr className="bg-gray-50">
+							{columns.map((column) => (
+								<th
+									key={column.key}
+									className="p-3 text-left font-semibold text-gray-600 border-b"
+									style={{ width: column.width }}
+								>
+									{column.header}
+								</th>
+							))}
+						</tr>
+					</thead>
+					<tbody>
+						{data?.map((row, rowIndex) => (
+							<tr
+								key={rowIndex}
+								className="hover:bg-gray-100 transition-colors"
+							>
+								{columns.map((column) => (
+									<td
+										key={column.key}
+										className="p-3 border-b"
+									>
+										{String(row[column.key] ?? "")}
+									</td>
+								))}
+							</tr>
+						))}
+					</tbody>
+				</table>
+			)}
+		</div>
+	);
 };
 
 export default GenericTable;
