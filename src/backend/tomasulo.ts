@@ -260,9 +260,6 @@ function issueToReservationStation1(instruction: TInstruction): void {
         return;
     }
 
-    //set the tag in the register file
-    registerFile.find((r) => r.tag === instruction.d)!.Q = rs.tag;
-
     //loading operands
     rs.op = instruction.type;
     rs.VJ = registerFile.find((r) => r.tag === instruction.s)!.content;
@@ -271,6 +268,9 @@ function issueToReservationStation1(instruction: TInstruction): void {
     rs.QK = registerFile.find((r) => r.tag === instruction.t)!.Q;
     rs.busy = 1;
     rs.cyclesRemaining = instruction.latency;
+
+    //set the tag in the register file
+    registerFile.find((r) => r.tag === instruction.d)!.Q = rs.tag;
 }
 
 function issueToReservationStation2(instruction: TInstruction): void {
@@ -280,8 +280,6 @@ function issueToReservationStation2(instruction: TInstruction): void {
         return;
     }
 
-    //set the tag in the register file
-    registerFile.find((r) => r.tag === instruction.d)!.Q = rs.tag;
 
     //loading operands
     rs.op = instruction.type;
@@ -291,6 +289,9 @@ function issueToReservationStation2(instruction: TInstruction): void {
     rs.QK = registerFile.find((r) => r.tag === instruction.t)!.Q;
     rs.busy = 1;
     rs.cyclesRemaining = instruction.latency;
+
+    //set the tag in the register file
+    registerFile.find((r) => r.tag === instruction.d)!.Q = rs.tag;
 }
 
 function issueToReservationStationInteger(instruction: TInstruction): void {
@@ -300,8 +301,6 @@ function issueToReservationStationInteger(instruction: TInstruction): void {
         return;
     }
 
-    //set the tag in the register file
-    registerFile.find((r) => r.tag === instruction.d)!.Q = rs.tag;
 
     //loading operands
     rs.op = instruction.type;
@@ -311,6 +310,9 @@ function issueToReservationStationInteger(instruction: TInstruction): void {
     rs.QK = "0";
     rs.busy = 1;
     rs.cyclesRemaining = instruction.latency;
+
+    //set the tag in the register file
+    registerFile.find((r) => r.tag === instruction.d)!.Q = rs.tag;
 }
 
 function issueToLoadBuffer(instruction: TInstruction): void {
@@ -327,14 +329,15 @@ function issueToLoadBuffer(instruction: TInstruction): void {
         return;
     }
 
-    //set the tag in the register file
-    registerFile.find((r) => r.tag === instruction.d)!.Q = buffer.tag;
 
     //loading operands
     buffer.op = instruction.type;
     buffer.address = parseInt(instruction.t);
     buffer.busy = 1;
     buffer.cyclesRemaining = (checkForCacheMiss(parseInt(instruction.s)) ? cacheMissPenalty : cacheHitLatency) + instruction.latency;
+
+    //set the tag in the register file
+    registerFile.find((r) => r.tag === instruction.d)!.Q = buffer.tag;
 }
 
 function issueToStoreBuffer(instruction: TInstruction): void {
@@ -351,8 +354,6 @@ function issueToStoreBuffer(instruction: TInstruction): void {
         return;
     }
 
-    //set the tag in the register file
-    registerFile.find((r) => r.tag === instruction.d)!.Q = buffer.tag;
 
     //loading operands
     buffer.op = instruction.type;
@@ -361,6 +362,9 @@ function issueToStoreBuffer(instruction: TInstruction): void {
     buffer.Q = registerFile.find((r) => r.tag === instruction.s)!.Q;
     buffer.busy = 1;
     buffer.cyclesRemaining = (checkForCacheMiss(parseInt(instruction.s)) ? cacheMissPenalty : cacheHitLatency) + instruction.latency
+
+    //set the tag in the register file
+    registerFile.find((r) => r.tag === instruction.d)!.Q = buffer.tag;
 }
 
 function get_op(rs: TReservationStationRow): InstructionTypeEnum {
@@ -375,14 +379,16 @@ function execute_ADD(rs: TReservationStationRow): number {
     const VJ = rs.VJ;
     const VK = rs.VK;
 
-    if (rs.cyclesRemaining == 0) {
+    if (rs.cyclesRemaining <= 1) {
         const result = VJ + VK;
+        console.log(`ADD operation completed. Result: ${result}`);
+        rs.cyclesRemaining--;
         return result;
-        console.log(`ADD operation in progress, cycles remaining: ${rs.cyclesRemaining}`);
     }
 
     else {
         rs.cyclesRemaining--;
+        console.log(`ADD operation in progress, cycles remaining: ${rs.cyclesRemaining}`);
         return Number.MIN_VALUE;
 
     }
@@ -393,11 +399,10 @@ function execute_SUB(rs: TReservationStationRow): number {
     const VJ = rs.VJ;
     const VK = rs.VK;
 
-    if (rs.cyclesRemaining == 0) {
+    if (rs.cyclesRemaining <= 1) {
         const result = VJ - VK;
-
+        rs.cyclesRemaining--;
         return result;
-        console.log(`SUB operation in progress, cycles remaining: ${rs.cyclesRemaining}`);
     }
 
     else {
@@ -411,11 +416,10 @@ function execute_MUL(rs: TReservationStationRow): number {
     const VJ = rs.VJ;
     const VK = rs.VK;
 
-    if (rs.cyclesRemaining == 0) {
+    if (rs.cyclesRemaining <= 1) {
         const result = VJ * VK;
-
+        rs.cyclesRemaining--;
         return result;
-        console.log(`MUL operation in progress, cycles remaining: ${rs.cyclesRemaining}`);
     }
 
     else {
@@ -434,11 +438,10 @@ function execute_DIV(rs: TReservationStationRow): number {
         throw new Error("Division by zero");
     }
 
-    if (rs.cyclesRemaining == 0) {
+    if (rs.cyclesRemaining <= 1) {
         const result = VJ / VK;
-
+        rs.cyclesRemaining--;
         return result;
-        console.log(`DIV operation in progress, cycles remaining: ${rs.cyclesRemaining}`);
     }
 
     else {
@@ -521,7 +524,7 @@ function execRes1(reservationStation: TReservationStation): void {
                     console.log(`Executing immediate operation ${op} with VJ: ${rs.VJ} and immediate VK: ${rs.VK}`);
                     const result = execute_ADD(rs);
                     rs.res = result;
-                    if (rs.cyclesRemaining == 0)
+                    if (rs.cyclesRemaining <= 0)
                         rs.res = result;
                     //     writeBack1(i, rs.tag, result);
                 } else {
@@ -708,17 +711,19 @@ function execLoad(Tbuffer: TBuffer): void {
 
 
         // Execute logic based on operation type
-        if (rs.cyclesRemaining <= 0) {
+        if (rs.cyclesRemaining <= 1) {
             switch (op) {
                 case InstructionTypeEnum.LW: {
                     const word = loadWordCache(rs.address);
                     rs.res = word;
+                    rs.cyclesRemaining--;
                     // writeBack3(i, rs.tag, word);
                 }
                     break;
                 case InstructionTypeEnum.LD: {
                     const word = loadDoubleCache(rs.address);
                     rs.res = word;
+                    rs.cyclesRemaining--;
                     // writeBack2(i, rs.tag, word);
                 }
                     break;
@@ -726,6 +731,7 @@ function execLoad(Tbuffer: TBuffer): void {
                 case InstructionTypeEnum.L_D: {
                     const word = loadDoubleCache(rs.address);
                     rs.res = word;
+                    rs.cyclesRemaining--;
                     // writeBack2(i, rs.tag, word);
 
                 }
@@ -733,6 +739,7 @@ function execLoad(Tbuffer: TBuffer): void {
                 case InstructionTypeEnum.L_S: {
                     const word = loadWordCache(rs.address);
                     rs.res = word;
+                    rs.cyclesRemaining--;
                     // writeBack2(i, rs.tag, word);
                 }
                     break;
@@ -753,7 +760,7 @@ function execStore(Tbuffer: TBuffer): void {
     for (let i = 0; i < Tbuffer.buffers.length; i++) {
         const rs = Tbuffer.buffers[i];
         const op = get_op2(rs); // Get the operation type from the reservation station
-        if (rs.cyclesRemaining <= 0) {
+        if (rs.cyclesRemaining <= 1) {
             // Execute logic based on operation type
             switch (op) {
                 case InstructionTypeEnum.SW:
@@ -761,6 +768,7 @@ function execStore(Tbuffer: TBuffer): void {
                         const value = rs.V!;
                         const address = rs.address!;
                         storeWordCache(value, address);
+                        rs.cyclesRemaining--;
                     } else {
                         if (bus.tag === rs.Q) {
                             rs.V = bus.value;
@@ -774,6 +782,7 @@ function execStore(Tbuffer: TBuffer): void {
                         const value = rs.V!;
                         const address = rs.address!;
                         storeDoubleCache(value, address);
+                        rs.cyclesRemaining--;
                     } else {
                         if (bus.tag === rs.Q) {
                             rs.V = bus.value;
@@ -788,6 +797,7 @@ function execStore(Tbuffer: TBuffer): void {
                         const value = rs.V!;
                         const address = rs.address!;
                         storeWordCache(value, address);
+                        rs.cyclesRemaining--;
                     } else {
                         if (bus.tag === rs.Q) {
                             rs.V = bus.value;
@@ -801,6 +811,7 @@ function execStore(Tbuffer: TBuffer): void {
                         const value = rs.V!;
                         const address = rs.address!;
                         storeDoubleCache(value, address);
+                        rs.cyclesRemaining--;
                     } else {
                         if (bus.tag === rs.Q) {
                             rs.V = bus.value;
@@ -842,9 +853,12 @@ function writeBackInt(index: number, tag: string, result: number): void {
     bus.tag = tag;
     bus.value = result;
 
+    console.log(`Writing back result ${result} to register file with tag ${tag}`);
+
+
     // Update the register file
     for (const register of registerFile) {
-        if (register.tag === tag) {
+        if (register.Q === tag) {
             register.Q = "0"; // Clear Q field
             register.content = result; // Update content with the result
             break;
@@ -858,6 +872,8 @@ function writeBackInt(index: number, tag: string, result: number): void {
     ReservationStationInteger.stations[index].busy = 0;
     ReservationStationInteger.stations[index].cyclesRemaining = 0;
 
+
+
 }
 function writeBack1(index: number, tag: string, result: number): void {
     if (!isBusAvailable()) {
@@ -868,6 +884,17 @@ function writeBack1(index: number, tag: string, result: number): void {
     // Publish the result to the bus
     bus.tag = tag;
     bus.value = result;
+
+    // Update the register file
+    for (const register of registerFile) {
+        if (register.Q === tag) {
+            register.Q = "0"; // Clear Q field
+            register.content = result; // Update content with the result
+            break;
+        }
+    }
+
+    // feed the result in the reservation stations that need it
 
     // Clear the reservation station
     ReservationStation1.stations[index].op = InstructionTypeEnum.NONE;
@@ -887,6 +914,15 @@ function writeBack2(index: number, tag: string, result: number): void {
     bus.tag = tag;
     bus.value = result;
 
+    // Update the register file
+    for (const register of registerFile) {
+        if (register.Q === tag) {
+            register.Q = "0"; // Clear Q field
+            register.content = result; // Update content with the result
+            break;
+        }
+    }
+
     // Clear the reservation station
     ReservationStation2.stations[index].op = InstructionTypeEnum.NONE;
     ReservationStation2.stations[index].VJ = 0;
@@ -905,6 +941,15 @@ function writeBack3(index: number, tag: string, result: number): void {
     bus.tag = tag;
     bus.value = result;
 
+    // Update the register file
+    for (const register of registerFile) {
+        if (register.Q === tag) {
+            register.Q = "0"; // Clear Q field
+            register.content = result; // Update content with the result
+            break;
+        }
+    }
+
 
     // Clear the reservation station
     LoadBuffer.buffers[index].op = InstructionTypeEnum.NONE;
@@ -922,6 +967,9 @@ function writeBack() {
     // find the tag of all the instructions that want to write and check priority and start writing the highest priority
     let maxPriority = 0;
     let highestPriorityTag = "";
+
+
+
 
     for (const rs of ReservationStation1.stations) {
         if (rs.res !== Number.MIN_VALUE) {
@@ -960,12 +1008,22 @@ function writeBack() {
         }
     }
 
+    console.log("####################");
+    
+
+    console.log("Highest priority tag: ", highestPriorityTag);
+    console.log("Max priority: ", maxPriority);
+    
+    
+    console.log("####################");
+
     // write the highest priority
 
     for (const rs of ReservationStation1.stations) {
         if (rs.tag === highestPriorityTag) {
             writeBack1(ReservationStation1.stations.indexOf(rs), rs.tag, rs.res);
             rs.res = Number.MIN_VALUE;
+            bus.tag = "";
             return;
         }
     }
@@ -973,6 +1031,7 @@ function writeBack() {
         if (rs.tag === highestPriorityTag) {
             writeBack2(ReservationStation2.stations.indexOf(rs), rs.tag, rs.res);
             rs.res = Number.MIN_VALUE;
+            bus.tag = "";
             return;
         }
     }
@@ -981,6 +1040,7 @@ function writeBack() {
             writeBackInt(ReservationStationInteger.stations.indexOf(rs), rs.tag, rs.res);
             //reset reservation station
             rs.res = Number.MIN_VALUE;
+            bus.tag = "";
             return;
 
         }
@@ -989,6 +1049,7 @@ function writeBack() {
         if (buf.tag === highestPriorityTag) {
             writeBack3(LoadBuffer.buffers.indexOf(buf), buf.tag, buf.res!);
             buf.res = Number.MIN_VALUE;
+            bus.tag = "";
             return;
         }
     }

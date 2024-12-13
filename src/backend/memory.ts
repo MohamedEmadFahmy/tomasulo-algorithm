@@ -21,7 +21,7 @@ const cacheSize: number = userInput.cacheSize; //No Of Blocks
 const cacheBlockSize: number = userInput.cacheBlockSize; //Size Of Block
 // Global variables
 
-const memorySize: number = 2048;
+const memorySize: number = 2048;    
 let cacheMissFlag: boolean = false;
 export const cacheHitLatency: number = 0;
 
