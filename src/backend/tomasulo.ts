@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
+// /* eslint-disable @typescript-eslint/no-unused-vars */
 import {
 	MainMemory,
 	DataCache,
@@ -26,6 +26,47 @@ import {
 } from "./types";
 import { userInput } from "../userInput";
 // initialize system
+
+// let userInput = {
+// 	noOfAddSubRS: 0,
+// 	noOfMulDivRS: 4,
+// 	noOfLoadBuffers: 4,
+// 	noOfStoreBuffers: 4,
+// 	noOfIntegerAddSubRS: 4,
+// 	cacheSize: 4,
+// 	cacheBlockSize: 4,
+// 	programInstructions: [
+// 		{
+// 			type: InstructionTypeEnum.DADDI,
+// 			d: "R1",
+// 			s: "R2",
+// 			t: "10",
+// 			latency: 2,
+// 		},
+// 	],
+// };
+
+// export const getInputFromUser = (
+// 	noOfAddSubRS: number,
+// 	noOfMulDivRS: number,
+// 	noOfLoadBuffers: number,
+// 	noOfStoreBuffers: number,
+// 	noOfIntegerAddSubRS: number,
+// 	cacheSize: number,
+// 	cacheBlockSize: number,
+// 	programInstructions: TInstruction[]
+// ) => {
+// 	userInput = {
+// 		noOfAddSubRS,
+// 		noOfMulDivRS,
+// 		noOfLoadBuffers,
+// 		noOfStoreBuffers,
+// 		noOfIntegerAddSubRS,
+// 		cacheSize,
+// 		cacheBlockSize,
+// 		programInstructions,
+// 	};
+// };
 
 const bus: TCDB = {
 	tag: "",

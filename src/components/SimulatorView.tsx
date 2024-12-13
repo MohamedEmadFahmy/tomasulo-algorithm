@@ -6,6 +6,8 @@ import { TomasuloSystem } from "../backend/tomasulo";
 import GenericTable from "./GenericTable";
 import { GenericTableTypeEnum } from "../constants";
 import { simulateStep } from "../backend/tomasulo";
+// import { getInputFromUser } from "../backend/tomasulo";
+// import { getInputFromUser2 } from "../backend/memory";
 
 interface SimulatorViewProps {
 	config: Config; // Ensure this property exists on SimulatorViewProps
@@ -23,6 +25,51 @@ const SimulatorView: React.FC<SimulatorViewProps> = ({
 		console.log("New system state: ", TomasuloSystem);
 		setToggleState(!toggleState);
 	};
+
+	// useEffect(() => {
+	// 	console.log("Config: ", config);
+
+	// 	const noOfAddSubRS = config.reservation_stations_sizes["FP ADD/SUB"];
+
+	// 	console.log("No of ADD/SUB RS: ", noOfAddSubRS);
+
+	// 	const noOfMulDivRS = config.reservation_stations_sizes["FP MUL/DIV"];
+
+	// 	const noOfLoadBuffers = config.buffer_sizes.LOAD;
+
+	// 	const noOfStoreBuffers = config.buffer_sizes.STORE;
+
+	// 	const noOfIntegerAddSubRS =
+	// 		config.reservation_stations_sizes["Integer ADD/SUB"];
+
+	// 	const cacheSize = config.cache_size;
+
+	// 	const cacheBlockSize = config.block_size;
+
+	// 	const programInstructions = instructionMemory;
+
+	// 	getInputFromUser(
+	// 		noOfAddSubRS,
+	// 		noOfMulDivRS,
+	// 		noOfLoadBuffers,
+	// 		noOfStoreBuffers,
+	// 		noOfIntegerAddSubRS,
+	// 		cacheSize,
+	// 		cacheBlockSize,
+	// 		programInstructions
+	// 	);
+
+	// 	getInputFromUser2(
+	// 		noOfAddSubRS,
+	// 		noOfMulDivRS,
+	// 		noOfLoadBuffers,
+	// 		noOfStoreBuffers,
+	// 		noOfIntegerAddSubRS,
+	// 		cacheSize,
+	// 		cacheBlockSize,
+	// 		programInstructions
+	// 	);
+	// }, []);
 
 	return (
 		<div className="bg-black w-full h-screen flex flex-col items-center">
