@@ -96,7 +96,7 @@ let ReservationStation2: TReservationStation = {
 
 let ReservationStationInteger: TReservationStation = {
 	reservationStationType: ReservationStationTypeEnum.INTEGER,
-	stations: Array.from({ length: 32 }, (_, i) => ({
+	stations: Array.from({ length: userInput.noOfIntegerAddSubRS }, (_, i) => ({
 		tag: `AI${i + 1}`,
 		op: InstructionTypeEnum.NONE,
 		VJ: 0,
@@ -301,17 +301,20 @@ function setReservationStations() {
 
 	ReservationStationInteger = {
 		reservationStationType: ReservationStationTypeEnum.INTEGER,
-		stations: Array.from({ length: 32 }, (_, i) => ({
-			tag: `AI${i + 1}`,
-			op: InstructionTypeEnum.NONE,
-			VJ: 0,
-			VK: 0,
-			QJ: "0",
-			QK: "0",
-			busy: 0,
-			res: Number.MIN_VALUE,
-			cyclesRemaining: 0,
-		})),
+		stations: Array.from(
+			{ length: userInput.noOfIntegerAddSubRS },
+			(_, i) => ({
+				tag: `AI${i + 1}`,
+				op: InstructionTypeEnum.NONE,
+				VJ: 0,
+				VK: 0,
+				QJ: "0",
+				QK: "0",
+				busy: 0,
+				res: Number.MIN_VALUE,
+				cyclesRemaining: 0,
+			})
+		),
 	};
 
 	LoadBuffer = {

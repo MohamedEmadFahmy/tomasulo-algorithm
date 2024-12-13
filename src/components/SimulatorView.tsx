@@ -295,6 +295,31 @@ const SimulatorView: React.FC<SimulatorViewProps> = ({
 					data={TomasuloSystem ? TomasuloSystem.registerFile : []}
 					title={"Register File"}
 				></GenericTable>
+
+				{/* Cache */}
+				<div className="bg-blue-300 flex flex-col gap-5 p-4 rounded-md">
+					<h2 className="text-center text-5xl text-white font-bold">
+						Cache
+					</h2>
+					<ol
+						start={0}
+						className="list-decimal list-inside mt-4 overflow-y-auto max-h-[70vh] text-xl font-bold"
+					>
+						{instructionMemory.length > 0 ? (
+							TomasuloSystem.cache.cache.map((block, index) => (
+								<li key={index} className="text-white">
+									<div key={index}>
+										{block.data.map((data, dataIndex) => (
+											<p key={dataIndex}>{data}</p>
+										))}
+									</div>
+								</li>
+							))
+						) : (
+							<p className="text-white">No cache added</p>
+						)}
+					</ol>
+				</div>
 			</div>
 		</div>
 	);
