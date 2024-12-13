@@ -13,6 +13,7 @@ import { userInput } from "../userInput";
  * 9. Memory and Cache are word alligned, can only load and store at multiples of 4 and 8
  * 10. Instruction Memory is indexed by PC
  * 11. Assume Branch is always taken
+ * 12. Instruction Queue is infinite
  */
 
 // User Input variables
