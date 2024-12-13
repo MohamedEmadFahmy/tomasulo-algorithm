@@ -1,35 +1,299 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
 import React, { useState } from "react";
 import { TInstruction } from "../backend/types";
+import { InstructionTypeEnum } from "../backend/types"; // Assuming this exists
+import { Config } from "../App";
 
 interface InputFormProps {
+	setConfig: React.Dispatch<React.SetStateAction<Config>>; // Correct the type of setConfig
 	setIsStarted: (isStarted: boolean) => void;
 	instructionMemory: TInstruction[];
 	setInstructionMemory: React.Dispatch<React.SetStateAction<TInstruction[]>>;
 }
 
-// const [instructions, setInstructions] = useState<string>("");
+// Define types for instruction inputs
+type InstructionInputType = {
+	type: string;
+	requiredFields: {
+		name: string;
+		type: "register" | "immediate" | "offset";
+		registerType?: "integer" | "float";
+	}[];
+	latencyType: string;
+};
 
-// // Fix: Added useState for instructionOperands
-// const [instructionOperands, setInstructionOperands] = useState<{
-// 	destReg?: string;
-// 	srcReg1?: string;
-// 	srcReg2?: string;
-// 	addressReg?: string;
-// 	offset?: number;
-// 	branchReg1?: string;
-// 	branchReg2?: string;
-// }>({});
-
-// const handleAddInstruction = () => {
-// 	if (instructions.trim() !== "") {
-// 		setInstructionList((prev) => [...prev, instructions]);
-// 		setInstructions("");
-// 		setInstructionOperands({}); // Reset operands when new instruction is added
-// 	}
-// };
+const instructionInputTypes: Record<string, InstructionInputType> = {
+	DADDI: {
+		type: "immediate",
+		requiredFields: [
+			{
+				name: "Destination Register",
+				type: "register",
+				registerType: "integer",
+			},
+			{
+				name: "Source Register",
+				type: "register",
+				registerType: "integer",
+			},
+			{ name: "Immediate Value", type: "immediate" },
+		],
+		latencyType: "Integer ADD",
+	},
+	DSUBI: {
+		type: "immediate",
+		requiredFields: [
+			{
+				name: "Destination Register",
+				type: "register",
+				registerType: "integer",
+			},
+			{
+				name: "Source Register",
+				type: "register",
+				registerType: "integer",
+			},
+			{ name: "Immediate Value", type: "immediate" },
+		],
+		latencyType: "Integer SUB",
+	},
+	"ADD.D": {
+		type: "arithmetic",
+		requiredFields: [
+			{
+				name: "Destination Register",
+				type: "register",
+				registerType: "float",
+			},
+			{
+				name: "Source Register 1",
+				type: "register",
+				registerType: "float",
+			},
+			{
+				name: "Source Register 2",
+				type: "register",
+				registerType: "float",
+			},
+		],
+		latencyType: "FP ADD",
+	},
+	"ADD.S": {
+		type: "arithmetic",
+		requiredFields: [
+			{
+				name: "Destination Register",
+				type: "register",
+				registerType: "float",
+			},
+			{
+				name: "Source Register 1",
+				type: "register",
+				registerType: "float",
+			},
+			{
+				name: "Source Register 2",
+				type: "register",
+				registerType: "float",
+			},
+		],
+		latencyType: "FP ADD",
+	},
+	"SUB.D": {
+		type: "arithmetic",
+		requiredFields: [
+			{
+				name: "Destination Register",
+				type: "register",
+				registerType: "float",
+			},
+			{
+				name: "Source Register 1",
+				type: "register",
+				registerType: "float",
+			},
+			{
+				name: "Source Register 2",
+				type: "register",
+				registerType: "float",
+			},
+		],
+		latencyType: "FP SUB",
+	},
+	"SUB.S": {
+		type: "arithmetic",
+		requiredFields: [
+			{
+				name: "Destination Register",
+				type: "register",
+				registerType: "float",
+			},
+			{
+				name: "Source Register 1",
+				type: "register",
+				registerType: "float",
+			},
+			{
+				name: "Source Register 2",
+				type: "register",
+				registerType: "float",
+			},
+		],
+		latencyType: "FP SUB",
+	},
+	"MUL.D": {
+		type: "arithmetic",
+		requiredFields: [
+			{
+				name: "Destination Register",
+				type: "register",
+				registerType: "float",
+			},
+			{
+				name: "Source Register 1",
+				type: "register",
+				registerType: "float",
+			},
+			{
+				name: "Source Register 2",
+				type: "register",
+				registerType: "float",
+			},
+		],
+		latencyType: "FP MUL",
+	},
+	"MUL.S": {
+		type: "arithmetic",
+		requiredFields: [
+			{
+				name: "Destination Register",
+				type: "register",
+				registerType: "float",
+			},
+			{
+				name: "Source Register 1",
+				type: "register",
+				registerType: "float",
+			},
+			{
+				name: "Source Register 2",
+				type: "register",
+				registerType: "float",
+			},
+		],
+		latencyType: "FP MUL",
+	},
+	"DIV.D": {
+		type: "arithmetic",
+		requiredFields: [
+			{
+				name: "Destination Register",
+				type: "register",
+				registerType: "float",
+			},
+			{
+				name: "Source Register 1",
+				type: "register",
+				registerType: "float",
+			},
+			{
+				name: "Source Register 2",
+				type: "register",
+				registerType: "float",
+			},
+		],
+		latencyType: "FP DIV",
+	},
+	"DIV.S": {
+		type: "arithmetic",
+		requiredFields: [
+			{
+				name: "Destination Register",
+				type: "register",
+				registerType: "float",
+			},
+			{
+				name: "Source Register 1",
+				type: "register",
+				registerType: "float",
+			},
+			{
+				name: "Source Register 2",
+				type: "register",
+				registerType: "float",
+			},
+		],
+		latencyType: "FP DIV",
+	},
+	LW: {
+		type: "memory",
+		requiredFields: [
+			{
+				name: "Destination Register",
+				type: "register",
+				registerType: "integer",
+			},
+			{ name: "Memory Address", type: "immediate" },
+		],
+		latencyType: "LOAD",
+	},
+	LD: {
+		type: "memory",
+		requiredFields: [
+			{
+				name: "Destination Register",
+				type: "register",
+				registerType: "float",
+			},
+			{ name: "Memory Address", type: "immediate" },
+		],
+		latencyType: "LOAD",
+	},
+	SW: {
+		type: "memory",
+		requiredFields: [
+			{
+				name: "Source Register",
+				type: "register",
+				registerType: "integer",
+			},
+			{ name: "Memory Address", type: "immediate" },
+		],
+		latencyType: "STORE",
+	},
+	SD: {
+		type: "memory",
+		requiredFields: [
+			{
+				name: "Source Register",
+				type: "register",
+				registerType: "float",
+			},
+			{ name: "Memory Address", type: "immediate" },
+		],
+		latencyType: "STORE",
+	},
+	BNE: {
+		type: "branch",
+		requiredFields: [
+			{ name: "Register 1", type: "register", registerType: "integer" },
+			{ name: "Register 2", type: "register", registerType: "integer" },
+			{ name: "Address To Branch To", type: "immediate" },
+		],
+		latencyType: "BRANCH",
+	},
+	BEQ: {
+		type: "branch",
+		requiredFields: [
+			{ name: "Register 1", type: "register", registerType: "integer" },
+			{ name: "Register 2", type: "register", registerType: "integer" },
+			{ name: "Address To Branch To", type: "immediate" },
+		],
+		latencyType: "BRANCH",
+	},
+};
 
 const InputForm: React.FC<InputFormProps> = ({
+	setConfig,
 	setIsStarted,
 	instructionMemory,
 	setInstructionMemory,
@@ -37,109 +301,125 @@ const InputForm: React.FC<InputFormProps> = ({
 	const [reservationStationSizes, setReservationStationSizes] = useState<
 		Record<string, number>
 	>({
-		"Integer Add/Sub": 1,
-		"Floating Point Add/Sub": 2,
-		"Floating Point MUL/DIV": 3,
-		LOAD: 4,
-		STORE: 5,
-		BRANCH: 6,
+		"Integer ADD/SUB": 3,
+		"FP ADD/SUB": 3,
+		"FP MUL/DIV": 2,
+		"LOAD BUFFER": 3,
+		"STORE BUFFER": 2,
 	});
-	const handleSizeChange = (stationType: string, newValue: number) => {
-		setReservationStationSizes((prev) => ({
-			...prev,
-			[stationType]: newValue,
-		}));
-	};
 
 	const [instructionLatencies, setInstructionLatencies] = useState<
 		Record<string, number>
 	>({
-		"Integer ADD/SUB": 2,
-		"FP ADD/SUB": 2,
-		"FP MUL": 10,
-		"FP DIV": 20,
-		LOAD: 2,
-		STORE: 2,
-		BRANCH: 1,
+		"Integer ADD": 1,
+		"Integer SUB": 1,
+		"FP ADD": 3,
+		"FP SUB": 3,
+		"FP MUL": 6,
+		"FP DIV": 12,
+		LOAD: 3,
+		STORE: 3,
+		// Branch latency will be undefined
 	});
+
+	// State for dynamic instruction input
+	const [selectedInstruction, setSelectedInstruction] = useState<string>("");
+	const [instructionInputs, setInstructionInputs] = useState<
+		Record<string, string>
+	>({});
+
+	// Generate register options - now with 32 registers
+	const integerRegisters = Array.from({ length: 32 }, (_, i) => `R${i}`);
+	const floatRegisters = Array.from({ length: 32 }, (_, i) => `F${i}`);
+
+	const handleSizeChange = (stationType: string, newValue: number) => {
+		setReservationStationSizes((prev) => ({
+			...prev,
+			[stationType]: Math.max(1, newValue), // Ensure minimum size of 1
+		}));
+	};
 
 	const handleLatencyChange = (instructionType: string, newValue: number) => {
 		setInstructionLatencies((prev) => ({
 			...prev,
-			[instructionType]: newValue,
+			[instructionType]: Math.max(1, newValue), // Ensure minimum latency of 1
 		}));
 	};
 
-	const [instructionList, setInstructionList] = useState<string[]>([
-		"moski",
-		"moski2",
-	]);
-
-	const handleSubmit = () => {
-		setIsStarted(true);
+	const handleInstructionChange = (instruction: string) => {
+		setSelectedInstruction(instruction);
+		// Reset inputs when instruction changes
+		setInstructionInputs({});
 	};
 
-	const instructionData = {
-		DADDI: {
-			name: "DADDI",
-		},
-		DSUBI: {
-			name: "DSUBI",
-		},
-		ADD_D: {
-			name: "ADD.D",
-		},
-		ADD_S: {
-			name: "ADD.S",
-		},
-		SUB_D: {
-			name: "SUB.D",
-		},
-		SUB_S: {
-			name: "SUB.S",
-		},
-		MUL_D: {
-			name: "MUL.D",
-		},
-		MUL_S: {
-			name: "MUL.S",
-		},
-		DIV_D: {
-			name: "DIV.D",
-		},
-		DIV_S: {
-			name: "DIV.S",
-		},
-		LW: {
-			name: "LW",
-		},
-		LD: {
-			name: "LD",
-		},
-		L_S: {
-			name: "L.S",
-		},
-		L_D: {
-			name: "L.D",
-		},
-		SW: {
-			name: "SW",
-		},
-		SD: {
-			name: "SD",
-		},
-		S_S: {
-			name: "S.S",
-		},
-		S_D: {
-			name: "S.D",
-		},
-		BNE: {
-			name: "BNE",
-		},
-		BEQ: {
-			name: "BEQ",
-		},
+	const handleInputChange = (field: string, value: string) => {
+		setInstructionInputs((prev) => ({
+			...prev,
+			[field]: value,
+		}));
+	};
+
+	const handleAddInstruction = () => {
+		// Validate inputs and add to instruction memory
+		if (
+			selectedInstruction &&
+			Object.keys(instructionInputs).length ===
+				instructionInputTypes[selectedInstruction].requiredFields.length
+		) {
+			// Get input values in order
+			const inputValues = instructionInputTypes[
+				selectedInstruction
+			].requiredFields.map((field) => instructionInputs[field.name]);
+
+			// Construct instruction object based on number of inputs
+			const newInstruction: TInstruction = {
+				name: selectedInstruction as InstructionTypeEnum,
+				d: inputValues[0] || "",
+				s: inputValues[1] || "",
+				t: inputValues[2] || "",
+				latency:
+					instructionLatencies[
+						instructionInputTypes[selectedInstruction].latencyType
+					],
+			};
+
+			// Update instruction memory
+			setInstructionMemory((prev) => [...prev, newInstruction]);
+
+			// Reset form
+			setSelectedInstruction("");
+			setInstructionInputs({});
+		} else {
+			alert("Please fill in all required fields");
+		}
+	};
+
+	const handleSubmit = () => {
+		if (instructionMemory.length > 0) {
+			setIsStarted(true);
+
+			const reservation_stations_sizes = {
+				"Integer ADD/SUB": reservationStationSizes["Integer ADD/SUB"],
+				"FP ADD/SUB": reservationStationSizes["FP ADD/SUB"],
+				"FP MUL/DIV": reservationStationSizes["FP MUL/DIV"],
+				LOAD: reservationStationSizes["LOAD BUFFER"],
+				STORE: reservationStationSizes["STORE BUFFER"],
+			};
+
+			const config = {
+				reservation_stations_sizes,
+			};
+
+			setConfig(config);
+		} else {
+			alert(
+				"Please add at least one instruction before starting the simulation"
+			);
+		}
+		console.log(
+			"Starting Simulation with Instructions:",
+			instructionMemory
+		);
 	};
 
 	return (
@@ -157,180 +437,150 @@ const InputForm: React.FC<InputFormProps> = ({
 							Add Instructions
 						</h2>
 
-						{/*
-
-						<div className="flex flex-col gap-4">
-							<label className="text-white font-semibold">
-								Select Instruction
-							</label>
-							<select
-								className="w-full p-2 border border-gray-300 rounded-md"
-								value={instructions}
-								onChange={(e) => {
-									setInstructions(e.target.value);
-									handleAddInstruction();
-								}}
-							>
-								<option value="">
-									-- Select an Instruction --
-								</option>
-								{[
-									"DADDI",
-									"DSUBI",
-									"ADD.D",
-									"ADD.S",
-									"SUB.D",
-									"SUB.S",
-									"MUL.D",
-									"MUL.S",
-									"DIV.D",
-									"DIV.S",
-									"LW",
-									"LD",
-									"L.S",
-									"L.D",
-									"SW",
-									"SD",
-									"S.S",
-									"S.D",
-									"BNE",
-									"BEQ",
-								].map((instruction) => (
-									<option
-										key={instruction}
-										value={instruction}
-									>
-										{instruction}
+						{/* Dynamic Instruction Input */}
+						<div className="bg-white p-4 rounded shadow">
+							<div className="mb-4">
+								<label className="block text-gray-700 font-bold mb-2">
+									Select Instruction
+								</label>
+								<select
+									value={selectedInstruction}
+									onChange={(e) =>
+										handleInstructionChange(e.target.value)
+									}
+									className="w-full p-2 border rounded"
+								>
+									<option value="">
+										-- Select Instruction --
 									</option>
-								))}
-							</select>
-
-							{instructions && (
-								<div className="flex flex-col gap-4">
-									<h3 className="text-white font-semibold">
-										Operands
-									</h3>
-
-									<div>
-										<label className="text-white block mb-1">
-											Destination Register
-										</label>
-										<select
-											className="w-full p-2 border border-gray-300 rounded-md"
-											value={
-												instructionOperands.destReg ||
-												""
-											}
-											onChange={(e) =>
-												setInstructionOperands(
-													(prev) => ({
-														...prev,
-														destReg: e.target.value,
-													})
-												)
-											}
-										>
-											<option value="">
-												-- Select Destination Register
-												--
+									{Object.keys(instructionInputTypes).map(
+										(inst) => (
+											<option key={inst} value={inst}>
+												{inst}
 											</option>
-											{["R1", "R2", "R3", "R4"].map(
-												(reg) => (
-													<option
-														key={reg}
-														value={reg}
-													>
-														{reg}
-													</option>
-												)
-											)}
-										</select>
-									</div>
+										)
+									)}
+								</select>
+							</div>
 
-									<div>
-										<label className="text-white block mb-1">
-											Source Register 1
-										</label>
-										<select
-											className="w-full p-2 border border-gray-300 rounded-md"
-											value={
-												instructionOperands.srcReg1 ||
-												""
-											}
-											onChange={(e) =>
-												setInstructionOperands(
-													(prev) => ({
-														...prev,
-														srcReg1: e.target.value,
-													})
-												)
-											}
-										>
-											<option value="">
-												-- Select Source Register 1 --
-											</option>
-											{["R1", "R2", "R3", "R4"].map(
-												(reg) => (
-													<option
-														key={reg}
-														value={reg}
-													>
-														{reg}
+							{selectedInstruction && (
+								<div>
+									{instructionInputTypes[
+										selectedInstruction
+									].requiredFields.map((field) => (
+										<div key={field.name} className="mb-4">
+											<label className="block text-gray-700 font-semibold mb-2">
+												{field.name}
+											</label>
+											{field.type === "register" ? (
+												<select
+													value={
+														instructionInputs[
+															field.name
+														] || ""
+													}
+													onChange={(e) =>
+														handleInputChange(
+															field.name,
+															e.target.value
+														)
+													}
+													className="w-full p-2 border rounded"
+												>
+													<option value="">
+														-- Select {field.name}{" "}
+														--
 													</option>
-												)
-											)}
-										</select>
-									</div>
+													{field.registerType ===
+													"float"
+														? floatRegisters.map(
+																(reg) => (
+																	<option
+																		key={
+																			reg
+																		}
+																		value={
+																			reg
+																		}
+																	>
+																		{reg}
+																	</option>
+																)
+														  )
+														: integerRegisters.map(
+																(reg) => (
+																	<option
+																		key={
+																			reg
+																		}
+																		value={
+																			reg
+																		}
+																	>
+																		{reg}
+																	</option>
+																)
+														  )}
+												</select>
+											) : field.type === "immediate" ? (
+												<input
+													type="number"
+													value={
+														instructionInputs[
+															field.name
+														] || ""
+													}
+													onChange={(e) =>
+														handleInputChange(
+															field.name,
+															e.target.value
+														)
+													}
+													className="w-full p-2 border rounded"
+													placeholder={`Enter ${field.name}`}
+												/>
+											) : field.type === "offset" ? (
+												<input
+													type="number"
+													value={
+														instructionInputs[
+															field.name
+														] || ""
+													}
+													onChange={(e) =>
+														handleInputChange(
+															field.name,
+															e.target.value
+														)
+													}
+													className="w-full p-2 border rounded"
+													placeholder="Enter Offset"
+												/>
+											) : null}
+										</div>
+									))}
 
-									<div>
-										<label className="text-white block mb-1">
-											Source Register 2
-										</label>
-										<select
-											className="w-full p-2 border border-gray-300 rounded-md"
-											value={
-												instructionOperands.srcReg2 ||
-												""
-											}
-											onChange={(e) =>
-												setInstructionOperands(
-													(prev) => ({
-														...prev,
-														srcReg2: e.target.value,
-													})
-												)
-											}
-										>
-											<option value="">
-												-- Select Source Register 2 --
-											</option>
-											{["R1", "R2", "R3", "R4"].map(
-												(reg) => (
-													<option
-														key={reg}
-														value={reg}
-													>
-														{reg}
-													</option>
-												)
-											)}
-										</select>
-									</div>
+									<button
+										onClick={handleAddInstruction}
+										className="bg-red-500 text-white p-2 rounded hover:bg-red-600 w-full"
+									>
+										Add Instruction
+									</button>
 								</div>
 							)}
-						</div> */}
+						</div>
 					</div>
 
 					{/* Middle Container: Display Instructions */}
 					<div className="flex-[3] bg-blue-300 p-4 flex flex-col gap-5">
 						<h2 className="text-center text-5xl text-white font-bold">
-							Instruction Queue
+							Program
 						</h2>
 						<ol className="list-decimal list-inside mt-4 overflow-y-auto max-h-96 text-xl font-bold">
-							{instructionList.length > 0 ? (
-								instructionList.map((inst, index) => (
+							{instructionMemory.length > 0 ? (
+								instructionMemory.map((inst, index) => (
 									<li key={index} className="text-white">
-										{inst}
+										{`${inst.name} ${inst.d}, ${inst.s}, ${inst.t} (Latency: ${inst.latency})`}
 									</li>
 								))
 							) : (
@@ -355,7 +605,10 @@ const InputForm: React.FC<InputFormProps> = ({
 							<div className="grid grid-cols-3 gap-2">
 								{Object.entries(reservationStationSizes).map(
 									([stationType, size]) => (
-										<div key={stationType}>
+										<div
+											key={stationType}
+											className="flex flex-col"
+										>
 											<label className="text-white block mb-1">
 												{stationType} Size
 											</label>
@@ -369,6 +622,7 @@ const InputForm: React.FC<InputFormProps> = ({
 														Number(e.target.value)
 													)
 												}
+												min="1"
 											/>
 										</div>
 									)
@@ -377,7 +631,6 @@ const InputForm: React.FC<InputFormProps> = ({
 						</div>
 
 						{/* Instruction Latencies */}
-
 						<div className="">
 							<h3 className="text-white font-bold mb-2">
 								Instruction Latencies
@@ -399,6 +652,7 @@ const InputForm: React.FC<InputFormProps> = ({
 														Number(e.target.value)
 													)
 												}
+												min="1"
 											/>
 										</div>
 									)
