@@ -12,8 +12,8 @@ import { Memory, Cache } from "./types";
  */
 
 // User Input variables
-const cacheSize: number = 256; //No Of Blocks
-const cacheBlockSize: number = 32; //Size Of Block
+const cacheSize: number = 32; //No Of Blocks
+const cacheBlockSize: number = 8; //Size Of Block
 const memorySize: number = 2048;
 // Global variables
 let cacheMissFlag: boolean = false;
@@ -37,7 +37,7 @@ export function initMemory() {
 export function initCache() {
   for (let i = 0; i < cacheSize; i++) {
     DataCache.cache[i] = {
-      address: -1,
+      address: [-1, -1],
       data: new Int8Array(cacheBlockSize),
     };
   }
@@ -46,6 +46,18 @@ export function initCache() {
 export function printMemory() {
   for (let i = 0; i < MainMemory.memory.length; i++) {
     printByte(i);
+  }
+}
+
+export function printCache() {
+  for(let i = 0; i < DataCache.cache.length; i++) {
+    console.log(`Block Number ${i}: `);
+    console.log(`Block Bytes: `);
+    for(let j = 0; j < cacheBlockSize; j++) {
+      console.log(`Byte ${j}:  ${DataCache.cache[i].data[j]}`);
+    }
+    console.log("*****************");
+    
   }
 }
 
@@ -79,37 +91,117 @@ export function printByteRange(address: number, range: number) {
   }
 }
 
+function fetchBlockfromMem(address: number, blockIndex: number) {
+  for (let j = 0; j < cacheBlockSize; j++) {
+    if (address + j < memorySize)
+      console.log("Current main memory content: " + MainMemory.memory[address + j]);
+      DataCache.cache[blockIndex].data[j] = MainMemory.memory[address + j];
+      console.log(`Cache content at blockIndex: ${blockIndex} byteIndex: ${j} is: ${DataCache.cache[blockIndex].data[j]}`);
+  }
+}
+
+function findEmptyBlockInCache(): number {
+  for (let blockIndex = 0; blockIndex < cacheSize; blockIndex++) {
+    if (
+      DataCache.cache[blockIndex].address[0] === -1 &&
+      DataCache.cache[blockIndex].address[1] === -1
+    ) {
+      return blockIndex;
+    }
+  }
+  return -1;
+}
+
+function findBlockIndex(address:number): number {
+  for(let i = 0; i< cacheSize; i++){
+    if(checkIfAddressIsInRange(address, DataCache.cache[i].address)){
+      return i;
+    }
+  }
+  return -1;
+}
+
+function getByteArray(value:number, size:number):Int8Array{
+  let byteArray = new Int8Array(4);
+  const slicedBitRep = convertToTwoComplement(value, 32);
+  // const slicedBitRep = bitRep.padStart(32, '0');
+  for (let i = 0; i < size; i++) {
+    byteArray[(3 - i)] = parseInt(slicedBitRep.slice(i * 8, (i + 1) * 8),2);
+  }
+  return byteArray;
+}
+
+function writeWordOnCache(value: number, address:number){
+  console.log(`Entered writeWordOnCache: value: ${value}`);
+  let blockIndex = findBlockIndex(address);
+  for(let i = 0; i<cacheBlockSize; i++){
+    if(address === (DataCache.cache[blockIndex].address[0])+i){
+      let valueByteArray = getByteArray(value, 4);
+      console.log(`valueByteArray: ${valueByteArray}`);
+      //220 - 200 = 20
+      let startingBlockAddress = address-DataCache.cache[blockIndex].address[0];
+      console.log(`startingBlockAddress: ${startingBlockAddress}`);
+      // console.log(`DataCache.cache[blockIndex].address[0] - 1`);
+      
+      for(let j = 0; j < valueByteArray.length; j++){
+        DataCache.cache[blockIndex].data[startingBlockAddress + j] = valueByteArray[j];
+        console.log(`Cache content at writeWordOnCache blockIndex: ${blockIndex} byteIndex: ${j} is: ${DataCache.cache[blockIndex].data[startingBlockAddress + j]}`);
+
+      }
+    }
+  }
+}
+
+function writeDoubleOnCache(value: number, address:number){
+  let blockIndex = findBlockIndex(address);
+  for(let i = 0; i<cacheBlockSize; i++){
+    if(address === (DataCache.cache[blockIndex].address[0])+i){
+      let valueByteArray = getByteArray(value, 8);
+      //220 - 200 = 20
+      let startingBlockAddress = address-DataCache.cache[blockIndex].address[0] -1;
+      for(let j = 0; j < valueByteArray.length; j++){
+        DataCache.cache[blockIndex].data[startingBlockAddress + j] = valueByteArray[j];
+      }
+    }
+  }
+}
+
+
+
 export function storeWordCache(value: number, address: number) {
   if (checkForCacheMiss(address)) {
     //store the block in first empty position in cache
-    for (let i = 0; i < cacheSize; i++) {
-      if (DataCache.cache[i].address === -1) {
-        DataCache.cache[i].address = address;
-        writeThrough32(value, address);
-        for (let j = 0; j < cacheBlockSize; j++) {
-          if (address + j < memorySize)
-            DataCache.cache[i].data[j] = MainMemory.memory[address + j];
-        }
-        break;
-      }
-    }
+      let blockIndex = findEmptyBlockInCache();
+      DataCache.cache[blockIndex].address = [address, address + cacheBlockSize - 1];
+      writeThrough32(value, address);
+      fetchBlockfromMem(address, blockIndex);
   } else {
-    writeThrough32(value, address);
+    // Write Thr\
+      writeWordOnCache(value, address);
+      writeThrough32(value, address);
+  }
+}
+
+function checkIfAddressIsInRange(address: number, range: [number, number]) {
+  if (address <= range[1] && address >= range[0]) {
+    return true;
+  } else {
+    return false;
   }
 }
 
 export function storeDoubleCache(value: number, address: number) {
   if (checkForCacheMiss(address)) {
     //store the block in first empty position in cache
-    for (let i = 0; i < cacheSize; i++) {
-      if (DataCache.cache[i].address === -1) {
-        DataCache.cache[i].address = address;
-        DataCache.cache[i].data = convertToTwoComplement(value, 64);
-        break;
-      }
-    }
+      let blockIndex = findEmptyBlockInCache();
+      DataCache.cache[blockIndex].address = [address, address + cacheBlockSize - 1];
+      writeThrough64(value, address);
+      fetchBlockfromMem(address, blockIndex);
+  } else {
+    // Write Thr\
+      writeDoubleOnCache(value, address);
+      writeThrough64(value, address);
   }
-  writeThrough64(value, address);
 }
 
 function writeThrough32(value: number, address: number) {
@@ -122,7 +214,7 @@ function writeThrough64(value: number, address: number) {
 
 function checkForCacheMiss(address: number) {
   for (let i = 0; i < cacheSize; i++) {
-    if (DataCache.cache[i].address === address) {
+    if (checkIfAddressIsInRange(address, DataCache.cache[i].address)) {
       cacheMissFlag = false;
       return false;
     }
@@ -153,14 +245,14 @@ export function doubleString(address: number): number {
     wordString += getByteString(byteValue);
   }
 
-  console.log(wordString);
+  // console.log(wordString);
   return getTwosComplementBinaryStringValue(wordString);
 }
 
 export function loadWord(address: number): number {
   //check range
   checkMemoryBounds(address, 4);
-
+  // console.log("miss: " + cacheMissFlag);
   let wordString = "";
 
   for (let i = 3; i >= address; i--) {
@@ -168,7 +260,7 @@ export function loadWord(address: number): number {
     wordString += getByteString(byteValue);
   }
 
-  console.log(wordString);
+  // console.log(wordString);
   return getTwosComplementBinaryStringValue(wordString);
 }
 
@@ -183,7 +275,7 @@ export function loadDouble(address: number): number {
     doubleString += getByteString(byteValue);
   }
 
-  console.log(doubleString);
+  // console.log(doubleString);
   return getTwosComplementBinaryStringValue(doubleString);
 }
 
@@ -257,7 +349,7 @@ function getByteString(value: number): string {
 
 export function storeDouble(value: number, address: number) {
   const bitRep = value.toString(2);
-  console.log(bitRep);
+  // console.log(bitRep);
   if (bitRep.length > 64 && !(bitRep.length == 65 && bitRep[0] == "-")) {
     throw new Error("Double is not 64 bit representable");
   }
@@ -269,17 +361,17 @@ export function storeDouble(value: number, address: number) {
       slicedBitRep.slice(i * 8, (i + 1) * 8),
       2
     );
-    console.log(
-      `Bit Representation: ${slicedBitRep.slice(i * 8, (i + 1) * 8)}`
-    );
-    console.log(
-      `Parsed Int: ${parseInt(slicedBitRep.slice(i * 8, (i + 1) * 8), 2)}`
-    );
-    console.log(
-      `Main Memory at Address ${address + (7 - i)}: ${
-        MainMemory.memory[address + (7 - i)]
-      }`
-    );
+    // console.log(
+    //   `Bit Representation: ${slicedBitRep.slice(i * 8, (i + 1) * 8)}`
+    // );
+    // console.log(
+    //   `Parsed Int: ${parseInt(slicedBitRep.slice(i * 8, (i + 1) * 8), 2)}`
+    // );
+    // console.log(
+    //   `Main Memory at Address ${address + (7 - i)}: ${
+    //     MainMemory.memory[address + (7 - i)]
+    //   }`
+    // );
   }
 }
 
@@ -298,7 +390,7 @@ export function convertToTwoComplement(value: number, padding: number): string {
 export function storeWord(value: number, address: number) {
   const bitRep = value.toString(2);
   if (bitRep.length > 32 && !(bitRep.length == 33 && bitRep[0] == "-")) {
-    console.log(`BitRep > 32: ${bitRep}`);
+    // console.log(`BitRep > 32: ${bitRep}`);
 
     throw new Error("Word is not 32 bit representable");
   }
@@ -310,35 +402,35 @@ export function storeWord(value: number, address: number) {
       slicedBitRep.slice(i * 8, (i + 1) * 8),
       2
     );
-    console.log(
-      `Bit Representation: ${slicedBitRep.slice(i * 8, (i + 1) * 8)}`
-    );
-    console.log(
-      `Parsed Int: ${parseInt(slicedBitRep.slice(i * 8, (i + 1) * 8), 2)}`
-    );
-    console.log(
-      `Main Memory at Address ${address + (3 - i)}: ${
-        MainMemory.memory[address + (3 - i)]
-      }`
-    );
+    // console.log(
+    //   `Bit Representation: ${slicedBitRep.slice(i * 8, (i + 1) * 8)}`
+    // );
+    // console.log(
+    //   `Parsed Int: ${parseInt(slicedBitRep.slice(i * 8, (i + 1) * 8), 2)}`
+    // );
+    // console.log(
+    //   `Main Memory at Address ${address + (3 - i)}: ${
+    //     MainMemory.memory[address + (3 - i)]
+    //   }`
+    // );
   }
 }
 
-//testing toString and parseInt complementarity
-const number = -5;
+// //testing toString and parseInt complementarity
+// const number = -5;
 
-const numberBinaryString = number.toString(2);
+// const numberBinaryString = number.toString(2);
 
-console.log(numberBinaryString);
+// console.log(numberBinaryString);
 
-// const convertedNumber = parseInt(numberBinaryString, 2);
-// const isEqual = number == convertedNumber;
+// // const convertedNumber = parseInt(numberBinaryString, 2);
+// // const isEqual = number == convertedNumber;
 
-// console.log(
-//   "Number: " +
-//     number +
-//     "\ttoString then parseInt: " +
-//     convertedNumber +
-//     "\tEquality: " +
-//     isEqual
-// );
+// // console.log(
+// //   "Number: " +
+// //     number +
+// //     "\ttoString then parseInt: " +
+// //     convertedNumber +
+// //     "\tEquality: " +
+// //     isEqual
+// // );

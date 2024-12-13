@@ -13,15 +13,25 @@ import {
   storeWord,
   storeDouble,
   loadDouble,
+  storeWordCache,
+  initCache,
+  printCache,
+  storeDoubleCache,
 } from "./backend/tomasulo";
 
 function App() {
   const [count, setCount] = useState(0);
 
+  initCache();
   initMemory();
-  storeDouble(Math.pow(2, 63) - 1, 0);
-  console.log(loadDouble(0));
-
+  storeWordCache(20, 0);
+  console.log(loadWord(0));
+  storeWordCache(2147483647, 4);
+  console.log(loadWord(4));
+  storeDoubleCache(9241421688590567425, 8);
+  console.log(loadDouble(8));
+  printCache();
+  
   return (
     <>
       <div>

@@ -26,7 +26,7 @@ export type Memory = {
 };
 
 export type Block = {
-  address: number;
+  address: [number, number];
   data: Int8Array;
 };
 
