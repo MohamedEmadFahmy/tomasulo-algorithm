@@ -22,6 +22,14 @@ export enum InstructionTypeEnum {
   BEQ = "BEQ",
 }
 
+export enum ReservationStationTypeEnum {
+  ADD_SUB = "ADD/SUB",
+  MUL_DIV = "MUL/DIV",
+  LOAD = "LOAD",
+  STORE = "STORE",
+  INTEGER = "INTEGER",
+}
+
 export type Memory = {
   memory: Int8Array;
 };
@@ -56,8 +64,8 @@ export type TReservationStationRow = {
 
 // add/sub, mul/div, addi/subi
 export type TReservationStation = {
-  reservationStationType: string;
-  stations: [TReservationStationRow];
+  reservationStationType: ReservationStationTypeEnum;
+  stations: TReservationStationRow[];
 };
 
 export type TBufferRow = {
@@ -71,7 +79,7 @@ export type TBufferRow = {
 
 export type TBuffer = {
   bufferType: string;
-  buffers: [TBufferRow];
+  buffers: TBufferRow[];
 };
 
 export type TRegisterFile = {

@@ -1,5 +1,5 @@
 import { Memory, Cache } from "./types";
-
+import { userInput } from "./tomasulo";
 /* conventions:
  * 1. Memory is byte addressable
  * 2. All numbers are in 8-bit two's complement
@@ -13,21 +13,31 @@ import { Memory, Cache } from "./types";
  */
 
 // User Input variables
-const cacheSize: number = 32; //No Of Blocks
-const cacheBlockSize: number = 8; //Size Of Block
+const cacheSize: number = userInput.cacheSize; //No Of Blocks
+const cacheBlockSize: number = userInput.cacheBlockSize; //Size Of Block
 // Global variables
 const memorySize: number = 2048;
 let cacheMissFlag: boolean = false;
+const cacheHitLatency: number = 1;
+const cacheMissPenalty: number = 1;
 
 //memory
 
-const MainMemory: Memory = {
+export const MainMemory: Memory = {
     memory: new Int8Array(memorySize),
 };
 
-const DataCache: Cache = {
+export const InstructionMemory = {
+    //an array of all instructions entered by the user
+    instructions: userInput.programInstructions,
+}
+
+//instruction memory
+
+export const DataCache: Cache = {
     cache: [],
 };
+
 
 export function initMemory() {
     for (let i = 0; i < MainMemory.memory.length; i++) {
