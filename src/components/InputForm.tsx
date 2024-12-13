@@ -4,6 +4,7 @@ import { InstructionTypeEnum } from "../backend/types"; // Assuming this exists
 import { Config } from "../App";
 
 interface InputFormProps {
+	config: Config;
 	setConfig: React.Dispatch<React.SetStateAction<Config>>; // Correct the type of setConfig
 	setIsStarted: (isStarted: boolean) => void;
 	instructionMemory: TInstruction[];
@@ -293,21 +294,12 @@ const instructionInputTypes: Record<string, InstructionInputType> = {
 };
 
 const InputForm: React.FC<InputFormProps> = ({
+	config,
 	setConfig,
 	setIsStarted,
 	instructionMemory,
 	setInstructionMemory,
 }) => {
-	const [reservationStationSizes, setReservationStationSizes] = useState<
-		Record<string, number>
-	>({
-		"Integer ADD/SUB": 3,
-		"FP ADD/SUB": 3,
-		"FP MUL/DIV": 2,
-		"LOAD BUFFER": 3,
-		"STORE BUFFER": 2,
-	});
-
 	const [instructionLatencies, setInstructionLatencies] = useState<
 		Record<string, number>
 	>({
@@ -333,9 +325,12 @@ const InputForm: React.FC<InputFormProps> = ({
 	const floatRegisters = Array.from({ length: 32 }, (_, i) => `F${i}`);
 
 	const handleSizeChange = (stationType: string, newValue: number) => {
-		setReservationStationSizes((prev) => ({
+		setConfig((prev) => ({
 			...prev,
-			[stationType]: Math.max(1, newValue), // Ensure minimum size of 1
+			reservation_stations_sizes: {
+				...prev.reservation_stations_sizes,
+				[stationType]: Math.max(1, newValue), // Ensure minimum size of 1
+			},
 		}));
 	};
 
@@ -384,6 +379,7 @@ const InputForm: React.FC<InputFormProps> = ({
 			};
 
 			// Update instruction memory
+
 			setInstructionMemory((prev) => [...prev, newInstruction]);
 
 			// Reset form
@@ -397,29 +393,12 @@ const InputForm: React.FC<InputFormProps> = ({
 	const handleSubmit = () => {
 		if (instructionMemory.length > 0) {
 			setIsStarted(true);
-
-			const reservation_stations_sizes = {
-				"Integer ADD/SUB": reservationStationSizes["Integer ADD/SUB"],
-				"FP ADD/SUB": reservationStationSizes["FP ADD/SUB"],
-				"FP MUL/DIV": reservationStationSizes["FP MUL/DIV"],
-				LOAD: reservationStationSizes["LOAD BUFFER"],
-				STORE: reservationStationSizes["STORE BUFFER"],
-			};
-
-			const config = {
-				reservation_stations_sizes,
-			};
-
-			setConfig(config);
+			// console.log("Starting Simulation with config: ", config);
 		} else {
 			alert(
 				"Please add at least one instruction before starting the simulation"
 			);
 		}
-		console.log(
-			"Starting Simulation with Instructions:",
-			instructionMemory
-		);
 	};
 
 	return (
@@ -429,10 +408,10 @@ const InputForm: React.FC<InputFormProps> = ({
 					Tomasulo Algorithm Simulator
 				</h1>
 			</div>
-			<div className="flex-1 bg-orange-300 w-full flex flex-col justify-center items-center p-4 gap-4">
+			<div className="flex-1 bg-orange-300 w-full flex flex-col justify-center items-center p-4 gap-2">
 				<div id="containers" className="w-full flex flex-1 gap-4">
 					{/* Left Container: Input Instructions */}
-					<div className="flex-[2] flex flex-col gap-4 bg-red-300 p-4">
+					<div className="flex-[2] flex flex-col gap-4 bg-red-300 p-4 rounded-md">
 						<h2 className="text-5xl text-center text-white font-bold">
 							Add Instructions
 						</h2>
@@ -572,15 +551,18 @@ const InputForm: React.FC<InputFormProps> = ({
 					</div>
 
 					{/* Middle Container: Display Instructions */}
-					<div className="flex-[3] bg-blue-300 p-4 flex flex-col gap-5">
+					<div className="flex-[3] bg-blue-300 flex flex-col gap-5 p-4 rounded-md">
 						<h2 className="text-center text-5xl text-white font-bold">
 							Program
 						</h2>
-						<ol className="list-decimal list-inside mt-4 overflow-y-auto max-h-96 text-xl font-bold">
+						<ol className="list-decimal list-inside mt-4 overflow-y-auto max-h-[70vh] text-xl font-bold">
 							{instructionMemory.length > 0 ? (
 								instructionMemory.map((inst, index) => (
 									<li key={index} className="text-white">
-										{`${inst.name} ${inst.d}, ${inst.s}, ${inst.t} (Latency: ${inst.latency})`}
+										{inst.t
+											? `${inst.name} ${inst.d}, ${inst.s}, ${inst.t} ` // (Latency: ${inst.latency})
+											: `${inst.name} ${inst.d}, ${inst.s} `}
+										{/* // (Latency: ${inst.latency})}  */}
 									</li>
 								))
 							) : (
@@ -592,47 +574,47 @@ const InputForm: React.FC<InputFormProps> = ({
 					</div>
 
 					{/* Right Container: Edit Latencies and Reservation Station Sizes */}
-					<div className="flex-[3] flex flex-col bg-gray-500 gap-10 p-4">
+					<div className="flex-[3] flex flex-col bg-gray-500 gap-3 p-4 rounded-md">
 						<h2 className="text-5xl text-center text-white font-bold">
 							Settings
 						</h2>
 
 						{/* Reservation Station Sizes */}
 						<div className="">
-							<h3 className="text-white font-bold mb-2">
+							<h3 className="text-2xl text-white font-bold mb-2">
 								Reservation Station Sizes
 							</h3>
 							<div className="grid grid-cols-3 gap-2">
-								{Object.entries(reservationStationSizes).map(
-									([stationType, size]) => (
-										<div
-											key={stationType}
-											className="flex flex-col"
-										>
-											<label className="text-white block mb-1">
-												{stationType} Size
-											</label>
-											<input
-												type="number"
-												className="w-full p-2 border border-gray-300 rounded-md"
-												value={size}
-												onChange={(e) =>
-													handleSizeChange(
-														stationType,
-														Number(e.target.value)
-													)
-												}
-												min="1"
-											/>
-										</div>
-									)
-								)}
+								{Object.entries(
+									config.reservation_stations_sizes
+								).map(([stationType, size]) => (
+									<div
+										key={stationType}
+										className="flex flex-col"
+									>
+										<label className="text-white block mb-1">
+											{stationType} Size
+										</label>
+										<input
+											type="number"
+											className="w-full p-2 border border-gray-300 rounded-md"
+											value={size}
+											onChange={(e) =>
+												handleSizeChange(
+													stationType,
+													Number(e.target.value)
+												)
+											}
+											min="1"
+										/>
+									</div>
+								))}
 							</div>
 						</div>
 
 						{/* Instruction Latencies */}
 						<div className="">
-							<h3 className="text-white font-bold mb-2">
+							<h3 className="text-2xl text-white font-bold mb-2">
 								Instruction Latencies
 							</h3>
 							<div className="grid grid-cols-3 gap-6">
@@ -657,6 +639,55 @@ const InputForm: React.FC<InputFormProps> = ({
 										</div>
 									)
 								)}
+							</div>
+						</div>
+
+						{/* Cache Configuration */}
+						<div className="">
+							<h3 className="text-2xl text-white font-bold mb-2">
+								Cache Configuration
+							</h3>
+							<div className="grid grid-cols-2 gap-6">
+								<div className="mb-2">
+									<label className="text-white block mb-1">
+										Cache Size (Blocks)
+									</label>
+									<input
+										type="number"
+										className="w-full p-2 border border-gray-300 rounded-md"
+										value={config.cache_size}
+										onChange={(e) =>
+											setConfig((prev) => ({
+												...prev,
+												cache_size: Math.max(
+													1,
+													Number(e.target.value)
+												),
+											}))
+										}
+										min="1"
+									/>
+								</div>
+								<div className="mb-2">
+									<label className="text-white block mb-1">
+										Block Size (Bytes)
+									</label>
+									<input
+										type="number"
+										className="w-full p-2 border border-gray-300 rounded-md"
+										value={config.block_size}
+										onChange={(e) =>
+											setConfig((prev) => ({
+												...prev,
+												block_size: Math.max(
+													1,
+													Number(e.target.value)
+												),
+											}))
+										}
+										min="1"
+									/>
+								</div>
 							</div>
 						</div>
 					</div>
