@@ -1,5 +1,6 @@
-import { Memory, Cache } from "./types";
-import { userInput } from "./tomasulo";
+import { Memory, SystemCache } from "./types";
+import { userInput } from "../userInput";
+
 /* conventions:
  * 1. Memory is byte addressable
  * 2. All numbers are in 8-bit two's complement
@@ -10,6 +11,8 @@ import { userInput } from "./tomasulo";
  * 7. Write Through Policy
  * 8. Cache Fully Associative
  * 9. Memory and Cache are word alligned, can only load and store at multiples of 4 and 8
+ * 10. Instruction Memory is indexed by PC
+ * 11. Assume Branch is always taken
  */
 
 // User Input variables
@@ -40,7 +43,7 @@ export const InstructionMemory = {
 
 //instruction memory
 
-export const DataCache: Cache = {
+export const DataCache: SystemCache = {
     cache: [],
 };
 
