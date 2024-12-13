@@ -324,12 +324,25 @@ const InputForm: React.FC<InputFormProps> = ({
 	const integerRegisters = Array.from({ length: 32 }, (_, i) => `R${i}`);
 	const floatRegisters = Array.from({ length: 32 }, (_, i) => `F${i}`);
 
-	const handleSizeChange = (stationType: string, newValue: number) => {
+	const handleReservationStationSizeChange = (
+		stationType: string,
+		newValue: number
+	) => {
 		setConfig((prev) => ({
 			...prev,
 			reservation_stations_sizes: {
 				...prev.reservation_stations_sizes,
 				[stationType]: Math.max(1, newValue), // Ensure minimum size of 1
+			},
+		}));
+	};
+
+	const handleBufferSizeChange = (bufferType: string, newValue: number) => {
+		setConfig((prev) => ({
+			...prev,
+			buffer_sizes: {
+				...prev.buffer_sizes,
+				[bufferType]: Math.max(1, newValue), // Ensure minimum size of 1
 			},
 		}));
 	};
@@ -603,7 +616,7 @@ const InputForm: React.FC<InputFormProps> = ({
 											className="w-full p-2 border border-gray-300 rounded-md"
 											value={size}
 											onChange={(e) =>
-												handleSizeChange(
+												handleReservationStationSizeChange(
 													stationType,
 													Number(e.target.value)
 												)
@@ -612,6 +625,39 @@ const InputForm: React.FC<InputFormProps> = ({
 										/>
 									</div>
 								))}
+							</div>
+						</div>
+
+						{/* Buffer Sizes */}
+						<div className="">
+							<h3 className="text-2xl text-white font-bold mb-2">
+								Buffer Sizes
+							</h3>
+							<div className="grid grid-cols-3 gap-2">
+								{Object.entries(config.buffer_sizes).map(
+									([bufferType, size]) => (
+										<div
+											key={bufferType}
+											className="flex flex-col"
+										>
+											<label className="text-white block mb-1">
+												{bufferType} Buffer Size
+											</label>
+											<input
+												type="number"
+												className="w-full p-2 border border-gray-300 rounded-md"
+												value={size}
+												onChange={(e) =>
+													handleBufferSizeChange(
+														bufferType,
+														Number(e.target.value)
+													)
+												}
+												min="1"
+											/>
+										</div>
+									)
+								)}
 							</div>
 						</div>
 
@@ -694,6 +740,8 @@ const InputForm: React.FC<InputFormProps> = ({
 							</div>
 						</div>
 					</div>
+
+					{/*  */}
 				</div>
 
 				{/* Submit Button */}

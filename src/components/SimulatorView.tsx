@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable react-hooks/exhaustive-deps */
 import React, { useEffect } from "react";
 import { Config } from "../App";
@@ -11,54 +12,9 @@ const SimulatorView: React.FC<SimulatorViewProps> = ({
 	config,
 	instructionMemory,
 }) => {
-	// const [simulationState, setSimulationState] = useState({
-	// 	cycle: 0,
-	// 	reservationStations: [],
-	// 	registerFile: { F0: 0, F1: 0, F2: 0, F3: 0 }, // Sample register file for display
-	// 	cache: [],
-	// 	instructionQueue: [
-	// 		{
-	// 			id: 1,
-	// 			type: "ADD",
-	// 			destination: "F0",
-	// 			source1: "F1",
-	// 			source2: "F2",
-	// 		},
-	// 		{
-	// 			id: 2,
-	// 			type: "SUB",
-	// 			destination: "F2",
-	// 			source1: "F0",
-	// 			source2: "F3",
-	// 		},
-	// 		{
-	// 			id: 3,
-	// 			type: "MUL",
-	// 			destination: "F3",
-	// 			source1: "F1",
-	// 			source2: "F0",
-	// 		},
-	// 	], // Sample instructions for display
-	// });
-
-	// const nextCycle = () => {
-	// 	// Increments the cycle count
-	// 	setSimulationState((prev) => ({
-	// 		...prev,
-	// 		cycle: prev.cycle + 1,
-	// 	}));
-	// };
-
-	// useEffect(() => {
-	// 	console.log("Simulation State Updated:", simulationState);
-	// }, [simulationState]);
-
 	useEffect(() => {
-		console.log(
-			"Reservation Stations Updated:",
-			config.reservation_stations_sizes
-		);
-		console.log("Instruction Memory Updated:", instructionMemory);
+		console.log("config: ", config);
+		// console.log("instructionMemory: ", instructionMemory);
 		// console.log("cache size: "));
 	}, []);
 
