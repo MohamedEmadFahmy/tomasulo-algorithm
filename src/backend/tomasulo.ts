@@ -379,10 +379,10 @@ function setRegisterFile() {
     { tag: "R30", Q: "0", content: 0 },
     { tag: "R31", Q: "0", content: 0 },
     { tag: "F0", Q: "0", content: 0 },
-    { tag: "F1", Q: "0", content: 3 },
-    { tag: "F2", Q: "0", content: 3 },
-    { tag: "F3", Q: "0", content: 3 },
-    { tag: "F4", Q: "0", content: 0 },
+    { tag: "F1", Q: "0", content: 0 },
+    { tag: "F2", Q: "0", content: 5 },
+    { tag: "F3", Q: "0", content: 0 },
+    { tag: "F4", Q: "0", content: 7 },
     { tag: "F5", Q: "0", content: 0 },
     { tag: "F6", Q: "0", content: 0 },
     { tag: "F7", Q: "0", content: 0 },
@@ -479,7 +479,7 @@ function issue(): void {
     return;
   }
 
-  const instruction = instructionQueue[instructionQueue.length - 1]; //always fetches last
+  const instruction = instructionQueue[0]; //always fetches last
   console.log("Instruction Fetched", instruction);
   //issue
   switch (instruction.type) {
@@ -1594,5 +1594,6 @@ export function simulateStep() {
   printTomasuloSystem();
 
   // instructionQueue.pop();
+  printMemory();
   TomasuloSystem.clock++;
 }

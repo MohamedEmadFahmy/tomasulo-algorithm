@@ -88,13 +88,10 @@ export function setMemory(
 
 export function initMemory() {
 	for (let i = 0; i < MainMemory.memory.length; i++) {
-		if (i === 0) {
-			MainMemory.memory[i] = 1;
-		}
-		else {
-			MainMemory.memory[i] = 0;
-		}
+		MainMemory.memory[i] = 0;
 	}
+	MainMemory.memory[0] = 2;
+	MainMemory.memory[8] = 3;
 
 }
 
