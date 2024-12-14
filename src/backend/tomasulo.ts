@@ -1046,71 +1046,58 @@ function execStore(Tbuffer: TBuffer): void {
 
     const op = get_op2(rs); // Get the operation type from the reservation station
 
-    if (rs.cyclesRemaining <= 1) {
-      // console.log("Store buffer Op BrolosBaskat: ", op);
-      // Execute logic based on operation type
-      switch (op) {
-        case InstructionTypeEnum.SW:
-          if (isReady2(rs)) {
-            const value = rs.V!;
-            const address = rs.address!;
-            storeWordCache(value, address);
-            rs.cyclesRemaining--;
-          } else {
-            if (bus.tag === rs.Q) {
-              rs.V = bus.value;
-              rs.Q = "0";
-            }
-          }
-          break;
-        case InstructionTypeEnum.SD:
-          if (isReady2(rs)) {
-            const value = rs.V!;
-            const address = rs.address!;
-            storeDoubleCache(value, address);
-            rs.cyclesRemaining--;
-          } else {
-            if (bus.tag === rs.Q) {
-              rs.V = bus.value;
-              rs.Q = "0";
-            }
-          }
-          break;
 
-        case InstructionTypeEnum.S_S:
-          if (isReady2(rs)) {
-            const value = rs.V!;
-            const address = rs.address!;
-            storeWordCache(value, address);
-            rs.cyclesRemaining--;
-          } else {
-            if (bus.tag === rs.Q) {
-              rs.V = bus.value;
-              rs.Q = "0";
-            }
-          }
-          break;
-        case InstructionTypeEnum.S_D:
-          if (isReady2(rs)) {
-            const value = rs.V!;
-            const address = rs.address!;
-            storeDoubleCache(value, address);
-            rs.cyclesRemaining--;
-          } else {
-            if (bus.tag === rs.Q) {
-              rs.V = bus.value;
-              rs.Q = "0";
-            }
-          }
-          break;
+    // console.log("Store buffer Op BrolosBaskat: ", op);
+    // Execute logic based on operation type
+    switch (op) {
+      case InstructionTypeEnum.SW:
+        if (isReady2(rs)) {
 
-        default:
-          console.error(`Unknown operation: ${op}`);
-          break;
-      }
-    } else {
-      rs.cyclesRemaining--;
+          rs.cyclesRemaining--;
+        } else {
+          if (bus.tag === rs.Q) {
+            rs.V = bus.value;
+            rs.Q = "0";
+          }
+        }
+        break;
+      case InstructionTypeEnum.SD:
+        if (isReady2(rs)) {
+          rs.cyclesRemaining--;
+        } else {
+          if (bus.tag === rs.Q) {
+            rs.V = bus.value;
+            rs.Q = "0";
+          }
+        }
+        break;
+
+      case InstructionTypeEnum.S_S:
+        if (isReady2(rs)) {
+          rs.cyclesRemaining--;
+        } else {
+          if (bus.tag === rs.Q) {
+            rs.V = bus.value;
+            rs.Q = "0";
+          }
+        }
+        break;
+      case InstructionTypeEnum.S_D:
+        if (isReady2(rs)) {
+          rs.cyclesRemaining--;
+        } else {
+          if (bus.tag === rs.Q) {
+            rs.V = bus.value;
+            rs.Q = "0";
+          }
+        }
+        break;
+
+      default:
+        console.error(`Unknown operation: ${op}`);
+        break;
     }
+
   }
 }
 
@@ -1387,6 +1374,20 @@ function writeBack3(index: number, tag: string, result: number): void {
 function writeBack4(index: number): void {
 
   console.log("Store buffer write back", index);
+  if(StoreBuffer.buffers[index].op == InstructionTypeEnum.SW){ 
+    storeWordCache(StoreBuffer.buffers[index].V!, StoreBuffer.buffers[index].address);
+  }
+  else if(StoreBuffer.buffers[index].op == InstructionTypeEnum.SD){
+    storeDoubleCache(StoreBuffer.buffers[index].V!, StoreBuffer.buffers[index].address);
+  }
+  else if(StoreBuffer.buffers[index].op == InstructionTypeEnum.S_S){
+    storeWordCache(StoreBuffer.buffers[index].V!, StoreBuffer.buffers[index].address);
+  }
+  else if(StoreBuffer.buffers[index].op == InstructionTypeEnum.S_D){
+    storeDoubleCache(StoreBuffer.buffers[index].V!, StoreBuffer.buffers[index].address);
+  }
+
+
   // Clear the reservation station
   StoreBuffer.buffers[index].op = InstructionTypeEnum.NONE;
   StoreBuffer.buffers[index].busy = 0;
@@ -1489,7 +1490,7 @@ function writeBack() {
     }
   }
   for (const buf of StoreBuffer.buffers) {
-    if (buf.busy == 1 && buf.cyclesRemaining<=0) {
+    if (buf.busy == 1 && buf.cyclesRemaining <= 0) {
       writeBack4(StoreBuffer.buffers.indexOf(buf));
       // buf.res = Number.MIN_VALUE;
       bus.tag = "";
