@@ -154,7 +154,9 @@ export function storeWordCache(value: number, address: number) {
 }
 
 export function storeDoubleCache(value: number, address: number) {
+	
 	if (checkForCacheMiss(address)) {
+		console.log("Entered storeDoubleCache, ", address);
 		//store the block in first empty position in cache
 		const blockIndex = findEmptyBlockInCache();
 		DataCache.cache[blockIndex].address = [
@@ -269,11 +271,9 @@ function writeWordOnCache(value: number, address: number) {
 	for (let i = 0; i < cacheBlockSize; i++) {
 		if (address === DataCache.cache[blockIndex].address[0] + i) {
 			const valueByteArray = getByteArray(value, 4);
-			console.log(`valueByteArray: ${valueByteArray}`);
 			//220 - 200 = 20
 			const startingBlockAddress =
 				address - DataCache.cache[blockIndex].address[0];
-			console.log(`startingBlockAddress: ${startingBlockAddress}`);
 			// console.log(`DataCache.cache[blockIndex].address[0] - 1`);
 			for (let j = 0; j < valueByteArray.length; j++) {
 				DataCache.cache[blockIndex].data[startingBlockAddress + j] =
@@ -296,7 +296,7 @@ function writeDoubleOnCache(value: number, address: number) {
 			const valueByteArray = getByteArray(value, 8);
 			//220 - 200 = 20
 			const startingBlockAddress =
-				address - DataCache.cache[blockIndex].address[0] - 1;
+				address - DataCache.cache[blockIndex].address[0];
 			for (let j = 0; j < valueByteArray.length; j++) {
 				DataCache.cache[blockIndex].data[startingBlockAddress + j] =
 					valueByteArray[j];
