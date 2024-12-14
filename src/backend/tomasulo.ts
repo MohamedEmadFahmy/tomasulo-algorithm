@@ -246,8 +246,8 @@ function setUserInput(
   systemUserInput: Config,
   systemProgramInstructions: TInstruction[]
 ) {
-  console.log(`UI user input:`);
-  console.table(systemUserInput);
+  // console.log(`UI user input:`);
+  // console.table(systemUserInput);
 
   userInput = {
     noOfAddSubRS: systemUserInput.reservation_stations_sizes["FP ADD/SUB"],
@@ -261,8 +261,8 @@ function setUserInput(
     programInstructions: systemProgramInstructions,
   };
 
-  console.log(`User input from tomasulo:`);
-  console.table(userInput);
+  // console.log(`User input from tomasulo:`);
+  // console.table(userInput);
 }
 
 function setBusDetails() {
@@ -488,6 +488,7 @@ function issue(): void {
     case InstructionTypeEnum.SUB_D:
     case InstructionTypeEnum.SUB_S:
       issueToReservationStation1(instruction);
+
       break;
 
     case InstructionTypeEnum.MUL_D:
@@ -495,11 +496,13 @@ function issue(): void {
     case InstructionTypeEnum.DIV_D:
     case InstructionTypeEnum.DIV_S:
       issueToReservationStation2(instruction);
+
       break;
 
     case InstructionTypeEnum.DADDI:
     case InstructionTypeEnum.DSUBI:
       issueToReservationStationInteger(instruction);
+
       break;
 
     case InstructionTypeEnum.LW:
@@ -507,6 +510,7 @@ function issue(): void {
     case InstructionTypeEnum.L_D:
     case InstructionTypeEnum.L_S:
       issueToLoadBuffer(instruction);
+
       break;
 
     case InstructionTypeEnum.SW:
@@ -514,10 +518,12 @@ function issue(): void {
     case InstructionTypeEnum.S_D:
     case InstructionTypeEnum.S_S:
       issueToStoreBuffer(instruction);
+
       break;
     case InstructionTypeEnum.BNE:
     case InstructionTypeEnum.BEQ:
       execBranch(parseInt(instruction.t));
+
       break;
     default:
       console.error(`Unknown operation: ${instruction.type}`);
@@ -531,6 +537,7 @@ function issueToReservationStation1(instruction: TInstruction): void {
     console.log("No available reservation station for ADD/SUB operation.");
     return;
   }
+  poppedIntstruction = instructionQueue.pop();
 
   //loading operands
   rs.op = instruction.type;
@@ -551,6 +558,7 @@ function issueToReservationStation2(instruction: TInstruction): void {
     console.log("No available reservation station for MUL/DIV operation.");
     return;
   }
+  poppedIntstruction = instructionQueue.pop();
 
   //loading operands
   rs.op = instruction.type;
@@ -571,6 +579,7 @@ function issueToReservationStationInteger(instruction: TInstruction): void {
     console.log("No available reservation station for integer operation.");
     return;
   }
+  poppedIntstruction = instructionQueue.pop();
 
   //loading operands
   rs.op = instruction.type;
@@ -600,6 +609,7 @@ function issueToLoadBuffer(instruction: TInstruction): void {
     //stall
     return;
   }
+  poppedIntstruction = instructionQueue.pop();
 
   //loading operands
   buffer.op = instruction.type;
@@ -631,12 +641,12 @@ function issueToStoreBuffer(instruction: TInstruction): void {
     console.log("No available store buffer.");
     return;
   }
+  poppedIntstruction = instructionQueue.pop();
 
   //loading operands
-  console.log("Instruction type of stor is: " + instruction.type)
-  console.log("Buffer.op Before: " + buffer.op);
+
   buffer.op = instruction.type;
-  console.log("Buffer.op After: " + buffer.op);
+
   buffer.address = parseInt(instruction.s);
   buffer.V = registerFile.find((r) => r.tag === instruction.d)!.content;
   buffer.Q = registerFile.find((r) => r.tag === instruction.d)!.Q;
@@ -1037,7 +1047,7 @@ function execStore(Tbuffer: TBuffer): void {
     const op = get_op2(rs); // Get the operation type from the reservation station
 
     if (rs.cyclesRemaining <= 1) {
-      console.log("Store buffer Op BrolosBaskat: ", op);
+      // console.log("Store buffer Op BrolosBaskat: ", op);
       // Execute logic based on operation type
       switch (op) {
         case InstructionTypeEnum.SW:
@@ -1376,11 +1386,12 @@ function writeBack3(index: number, tag: string, result: number): void {
 
 function writeBack4(index: number): void {
 
+  console.log("Store buffer write back", index);
   // Clear the reservation station
   StoreBuffer.buffers[index].op = InstructionTypeEnum.NONE;
   StoreBuffer.buffers[index].busy = 0;
   StoreBuffer.buffers[index].address = 0;
-  StoreBuffer.buffers[index].Q = '0';
+  StoreBuffer.buffers[index].Q = "0";
   StoreBuffer.buffers[index].V = 0;
 }
 
@@ -1478,7 +1489,7 @@ function writeBack() {
     }
   }
   for (const buf of StoreBuffer.buffers) {
-    if (buf.cyclesRemaining <= 0) {
+    if (buf.busy == 1 && buf.cyclesRemaining<=0) {
       writeBack4(StoreBuffer.buffers.indexOf(buf));
       // buf.res = Number.MIN_VALUE;
       bus.tag = "";
@@ -1539,48 +1550,49 @@ function execute(): void {
   execResInt(ReservationStationInteger);
 }
 
-function printTomasuloSystemReservationStations(): void {
-  console.log("Reservation Stations:");
-  console.log("Reservation Station Add/Sub:");
-  console.table(ReservationStation1.stations);
-  console.log("Reservation Station Mul/Div:");
-  console.table(ReservationStation2.stations);
-  console.log("Integer Reservation Station ADDI/SUBI:");
-  console.table(ReservationStationInteger.stations);
-}
+// function printTomasuloSystemReservationStations(): void {
+//   console.log("Reservation Stations:");
+//   console.log("Reservation Station Add/Sub:");
+//   console.table(ReservationStation1.stations);
+//   console.log("Reservation Station Mul/Div:");
+//   console.table(ReservationStation2.stations);
+//   console.log("Integer Reservation Station ADDI/SUBI:");
+//   console.table(ReservationStationInteger.stations);
+// }
 
-function printTomasuloSystemBuffers() {
-  console.log("Load Buffer:");
-  console.table(LoadBuffer.buffers);
-  console.log("Store Buffer:");
-  console.table(StoreBuffer.buffers);
-}
-function printTomasuloSystemRegisterFile(): void {
-  console.log("Register File:");
-  console.table(registerFile);
-}
-function printInstructionQueue(): void {
-  console.log("Instruction Queue:");
-  console.table(instructionQueue);
+// function printTomasuloSystemBuffers() {
+//   console.log("Load Buffer:");
+//   console.table(LoadBuffer.buffers);
+//   console.log("Store Buffer:");
+//   console.table(StoreBuffer.buffers);
+// }
+// function printTomasuloSystemRegisterFile(): void {
+//   console.log("Register File:");
+//   console.table(registerFile);
+// }
+// function printInstructionQueue(): void {
+//   console.log("Instruction Queue:");
+//   console.table(instructionQueue);
+// }
+
+function printMemory(): void {
+  console.log("Memory:");
+  console.table(MainMemory);
 }
 
 function printTomasuloSystem(): void {
-  printTomasuloSystemReservationStations();
-  printTomasuloSystemBuffers();
-  printTomasuloSystemRegisterFile();
-  printInstructionQueue();
+  printMemory();
 }
 
 export function simulateStep() {
   // if(instructionQueue.length<=0){
   // }
-  console.log(`PC: ${InstructionMemory.PC}`)
+  // console.log(`PC: ${InstructionMemory.PC}`)
   writeBack();
   execute();
   issue();
   printTomasuloSystem();
-  poppedIntstruction = instructionQueue.pop();
 
-
+  // instructionQueue.pop();
   TomasuloSystem.clock++;
 }

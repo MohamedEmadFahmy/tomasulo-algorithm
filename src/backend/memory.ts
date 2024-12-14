@@ -88,13 +88,14 @@ export function setMemory(
 
 export function initMemory() {
 	for (let i = 0; i < MainMemory.memory.length; i++) {
-        if(i==4){
-            MainMemory.memory[i] = 8;
-        }
-        else{
-            MainMemory.memory[i] = 0;
-        }
+		if (i === 0) {
+			MainMemory.memory[i] = 1;
+		}
+		else {
+			MainMemory.memory[i] = 0;
+		}
 	}
+
 }
 
 export function initCache() {
@@ -199,11 +200,11 @@ export function printByte(address: number) {
 	const number = MainMemory.memory[address];
 	console.log(
 		"Index: " +
-			address +
-			"\tNumber: " +
-			number +
-			"\tBinary: " +
-			number.toString(2)
+		address +
+		"\tNumber: " +
+		number +
+		"\tBinary: " +
+		number.toString(2)
 	);
 }
 
@@ -281,10 +282,9 @@ function writeWordOnCache(value: number, address: number) {
 				DataCache.cache[blockIndex].data[startingBlockAddress + j] =
 					valueByteArray[j];
 				console.log(
-					`Cache content at writeWordOnCache blockIndex: ${blockIndex} byteIndex: ${j} is: ${
-						DataCache.cache[blockIndex].data[
-							startingBlockAddress + j
-						]
+					`Cache content at writeWordOnCache blockIndex: ${blockIndex} byteIndex: ${j} is: ${DataCache.cache[blockIndex].data[
+					startingBlockAddress + j
+					]
 					}`
 				);
 			}
