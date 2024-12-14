@@ -60,6 +60,7 @@ let userInput = {
     // { type: InstructionTypeEnum.SW, d: "R1", s: "R2", t: "10", latency: 2 },
   ],
 };
+export let poppedIntstruction: TInstruction | undefined = undefined;
 
 let bus: TCDB = {
   tag: "",
@@ -346,7 +347,7 @@ function setReservationStations() {
 function setRegisterFile() {
   registerFile = [
     { tag: "R0", Q: "0", content: 0 },
-    { tag: "R1", Q: "0", content: 0 },
+    { tag: "R1", Q: "0", content: 5 },
     { tag: "R2", Q: "0", content: 0 },
     { tag: "R3", Q: "0", content: 0 },
     { tag: "R4", Q: "0", content: 0 },
@@ -378,9 +379,9 @@ function setRegisterFile() {
     { tag: "R30", Q: "0", content: 0 },
     { tag: "R31", Q: "0", content: 0 },
     { tag: "F0", Q: "0", content: 0 },
-    { tag: "F1", Q: "0", content: 0 },
-    { tag: "F2", Q: "0", content: 0 },
-    { tag: "F3", Q: "0", content: 0 },
+    { tag: "F1", Q: "0", content: 3 },
+    { tag: "F2", Q: "0", content: 3 },
+    { tag: "F3", Q: "0", content: 3 },
     { tag: "F4", Q: "0", content: 0 },
     { tag: "F5", Q: "0", content: 0 },
     { tag: "F6", Q: "0", content: 0 },
@@ -632,18 +633,21 @@ function issueToStoreBuffer(instruction: TInstruction): void {
   }
 
   //loading operands
+  console.log("Instruction type of stor is: " + instruction.type)
+  console.log("Buffer.op Before: " + buffer.op);
   buffer.op = instruction.type;
+  console.log("Buffer.op After: " + buffer.op);
   buffer.address = parseInt(instruction.s);
   buffer.V = registerFile.find((r) => r.tag === instruction.d)!.content;
-  buffer.Q = registerFile.find((r) => r.tag === instruction.s)!.Q;
+  buffer.Q = registerFile.find((r) => r.tag === instruction.d)!.Q;
   buffer.busy = 1;
   buffer.cyclesRemaining =
     (checkForCacheMiss(parseInt(instruction.s))
       ? cacheMissPenalty
       : cacheHitLatency) + instruction.latency;
 
-  //set the tag in the register file
-  registerFile.find((r) => r.tag === instruction.d)!.Q = buffer.tag;
+  // //set the tag in the register file
+  // registerFile.find((r) => r.tag === instruction.d)!.Q = buffer.tag;
 }
 
 function get_op(rs: TReservationStationRow): InstructionTypeEnum {
@@ -1019,7 +1023,8 @@ function execLoad(Tbuffer: TBuffer): void {
           console.error(`Unknown operation: ${op}`);
           break;
       }
-    } else {
+    }
+    else {
       rs.cyclesRemaining--;
     }
   }
@@ -1028,8 +1033,11 @@ function execLoad(Tbuffer: TBuffer): void {
 function execStore(Tbuffer: TBuffer): void {
   for (let i = 0; i < Tbuffer.buffers.length; i++) {
     const rs = Tbuffer.buffers[i];
+
     const op = get_op2(rs); // Get the operation type from the reservation station
+
     if (rs.cyclesRemaining <= 1) {
+      console.log("Store buffer Op BrolosBaskat: ", op);
       // Execute logic based on operation type
       switch (op) {
         case InstructionTypeEnum.SW:
@@ -1126,6 +1134,46 @@ function writeBackInt(index: number, tag: string, result: number): void {
     }
   }
 
+  //update the reservation stations that need the tag
+  for (const rs of ReservationStation1.stations) {
+    if (rs.QJ === tag) {
+      rs.VJ = result;
+      rs.QJ = "0";
+    }
+    if (rs.QK === tag) {
+      rs.VK = result;
+      rs.QK = "0";
+    }
+  }
+  for (const rs of ReservationStation2.stations) {
+    if (rs.QJ === tag) {
+      rs.VJ = result;
+      rs.QJ = "0";
+    }
+    if (rs.QK === tag) {
+      rs.VK = result;
+      rs.QK = "0";
+    }
+  }
+  for (const rs of ReservationStationInteger.stations) {
+    if (rs.QJ === tag) {
+      rs.VJ = result;
+      rs.QJ = "0";
+    }
+    if (rs.QK === tag) {
+      rs.VK = result;
+      rs.QK = "0";
+    }
+  }
+  for (const buf of StoreBuffer.buffers) {
+    if (buf.Q === tag) {
+      buf.V = result;
+      buf.Q = "0";
+    }
+  }
+
+
+
   // Clear the reservation station
   ReservationStationInteger.stations[index].op = InstructionTypeEnum.NONE;
   ReservationStationInteger.stations[index].VJ = 0;
@@ -1149,6 +1197,44 @@ function writeBack1(index: number, tag: string, result: number): void {
       register.Q = "0"; // Clear Q field
       register.content = result; // Update content with the result
       break;
+    }
+  }
+
+  //update the reservation stations that need the tag
+  for (const rs of ReservationStation1.stations) {
+    if (rs.QJ === tag) {
+      rs.VJ = result;
+      rs.QJ = "0";
+    }
+    if (rs.QK === tag) {
+      rs.VK = result;
+      rs.QK = "0";
+    }
+  }
+  for (const rs of ReservationStation2.stations) {
+    if (rs.QJ === tag) {
+      rs.VJ = result;
+      rs.QJ = "0";
+    }
+    if (rs.QK === tag) {
+      rs.VK = result;
+      rs.QK = "0";
+    }
+  }
+  for (const rs of ReservationStationInteger.stations) {
+    if (rs.QJ === tag) {
+      rs.VJ = result;
+      rs.QJ = "0";
+    }
+    if (rs.QK === tag) {
+      rs.VK = result;
+      rs.QK = "0";
+    }
+  }
+  for (const buf of StoreBuffer.buffers) {
+    if (buf.Q === tag) {
+      buf.V = result;
+      buf.Q = "0";
     }
   }
 
@@ -1180,6 +1266,44 @@ function writeBack2(index: number, tag: string, result: number): void {
     }
   }
 
+  //update the reservation stations that need the tag
+  for (const rs of ReservationStation1.stations) {
+    if (rs.QJ === tag) {
+      rs.VJ = result;
+      rs.QJ = "0";
+    }
+    if (rs.QK === tag) {
+      rs.VK = result;
+      rs.QK = "0";
+    }
+  }
+  for (const rs of ReservationStation2.stations) {
+    if (rs.QJ === tag) {
+      rs.VJ = result;
+      rs.QJ = "0";
+    }
+    if (rs.QK === tag) {
+      rs.VK = result;
+      rs.QK = "0";
+    }
+  }
+  for (const rs of ReservationStationInteger.stations) {
+    if (rs.QJ === tag) {
+      rs.VJ = result;
+      rs.QJ = "0";
+    }
+    if (rs.QK === tag) {
+      rs.VK = result;
+      rs.QK = "0";
+    }
+  }
+  for (const buf of StoreBuffer.buffers) {
+    if (buf.Q === tag) {
+      buf.V = result;
+      buf.Q = "0";
+    }
+  }
+
   // Clear the reservation station
   ReservationStation2.stations[index].op = InstructionTypeEnum.NONE;
   ReservationStation2.stations[index].VJ = 0;
@@ -1206,10 +1330,58 @@ function writeBack3(index: number, tag: string, result: number): void {
     }
   }
 
+  //update the reservation stations that need the tag
+  for (const rs of ReservationStation1.stations) {
+    if (rs.QJ === tag) {
+      rs.VJ = result;
+      rs.QJ = "0";
+    }
+    if (rs.QK === tag) {
+      rs.VK = result;
+      rs.QK = "0";
+    }
+  }
+  for (const rs of ReservationStation2.stations) {
+    if (rs.QJ === tag) {
+      rs.VJ = result;
+      rs.QJ = "0";
+    }
+    if (rs.QK === tag) {
+      rs.VK = result;
+      rs.QK = "0";
+    }
+  }
+  for (const rs of ReservationStationInteger.stations) {
+    if (rs.QJ === tag) {
+      rs.VJ = result;
+      rs.QJ = "0";
+    }
+    if (rs.QK === tag) {
+      rs.VK = result;
+      rs.QK = "0";
+    }
+  }
+  for (const buf of StoreBuffer.buffers) {
+    if (buf.Q === tag) {
+      buf.V = result;
+      buf.Q = "0";
+    }
+  }
+
   // Clear the reservation station
   LoadBuffer.buffers[index].op = InstructionTypeEnum.NONE;
   LoadBuffer.buffers[index].busy = 0;
   LoadBuffer.buffers[index].address = 0;
+}
+
+function writeBack4(index: number): void {
+
+  // Clear the reservation station
+  StoreBuffer.buffers[index].op = InstructionTypeEnum.NONE;
+  StoreBuffer.buffers[index].busy = 0;
+  StoreBuffer.buffers[index].address = 0;
+  StoreBuffer.buffers[index].Q = '0';
+  StoreBuffer.buffers[index].V = 0;
 }
 
 function writeBack() {
@@ -1305,6 +1477,14 @@ function writeBack() {
       return;
     }
   }
+  for (const buf of StoreBuffer.buffers) {
+    if (buf.cyclesRemaining <= 0) {
+      writeBack4(StoreBuffer.buffers.indexOf(buf));
+      // buf.res = Number.MIN_VALUE;
+      bus.tag = "";
+      return;
+    }
+  }
 }
 
 function buspriority(tag: string): number {
@@ -1330,23 +1510,7 @@ function buspriority(tag: string): number {
   return count;
 }
 
-// function writeBack4(index: number): void {
 
-//     // Clear the reservation station
-//     StoreBuffer.buffers[index].op = InstructionTypeEnum.NONE;
-//     StoreBuffer.buffers[index].tag = "";
-//     StoreBuffer.buffers[index].busy = 0;
-//     StoreBuffer.buffers[index].address = 0;
-//     StoreBuffer.buffers[index].Q = '0';
-
-//     // Simulate bus usage for a cycle
-//     setTimeout(() => {
-//         // Clear the bus after one cycle
-//         bus.tag = "";
-//         bus.value = 0;
-//         console.log("Bus cleared.");
-//     }, 1000); // Adjust timeout based on your simulation clock
-// }
 
 // function processWriteBack(instructions: Array<{ index: number, tag: string, result: number }>): void {
 //     instructions.sort((a, b) => buspriority(b.tag) - buspriority(a.tag));
@@ -1408,10 +1572,15 @@ function printTomasuloSystem(): void {
 }
 
 export function simulateStep() {
+  // if(instructionQueue.length<=0){
+  // }
+  console.log(`PC: ${InstructionMemory.PC}`)
   writeBack();
   execute();
   issue();
   printTomasuloSystem();
-  instructionQueue.pop();
+  poppedIntstruction = instructionQueue.pop();
+
+
   TomasuloSystem.clock++;
 }

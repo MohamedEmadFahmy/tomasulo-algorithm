@@ -13,6 +13,7 @@ import {
   simulateStep,
   setupSystem,
   ITomasuloSystem,
+  poppedIntstruction
 } from "../backend/tomasulo";
 
 let TomasuloSystem: ITomasuloSystem = {
@@ -183,153 +184,155 @@ const SimulatorView: React.FC<SimulatorViewProps> = ({
         <p className="text-5xl font-bold">
           Current Clock Cycle: {TomasuloSystem ? TomasuloSystem.clock : "0"}
         </p>
-        <button className="bg-blue-300 p-4" onClick={handleClick}>
+        <button className="bg-blue-500 p-8 fixed right-20 top-20" onClick={handleClick}>
           Next Clock Cycle
         </button>
 
         {/* Loop through the reservation stations and display them */}
 
-        <GenericTable
-          type={GenericTableTypeEnum.ReservationStations}
-          data={
-            TomasuloSystem
-              ? TomasuloSystem.ReservationStations[0]?.stations
-              : []
-          }
-          title={
-            TomasuloSystem
-              ? TomasuloSystem
-                ? TomasuloSystem.ReservationStations[0]?.reservationStationType
-                : {} + " Reservation Station"
-              : "undefined"
-          }
-        ></GenericTable>
-        <GenericTable
-          type={GenericTableTypeEnum.ReservationStations}
-          data={
-            TomasuloSystem
-              ? TomasuloSystem.ReservationStations[1]?.stations
-              : []
-          }
-          title={
-            TomasuloSystem
-              ? TomasuloSystem.ReservationStations[1]?.reservationStationType +
+        <div className="grid grid-cols-2 gap-5">
+          <GenericTable
+            type={GenericTableTypeEnum.ReservationStations}
+            data={
+              TomasuloSystem
+                ? TomasuloSystem.ReservationStations[0]?.stations
+                : []
+            }
+            title={
+              TomasuloSystem
+                ? TomasuloSystem
+                  ? TomasuloSystem.ReservationStations[0]?.reservationStationType
+                  : {} + " Reservation Station"
+                : "undefined"
+            }
+          ></GenericTable>
+          <GenericTable
+            type={GenericTableTypeEnum.ReservationStations}
+            data={
+              TomasuloSystem
+                ? TomasuloSystem.ReservationStations[1]?.stations
+                : []
+            }
+            title={
+              TomasuloSystem
+                ? TomasuloSystem.ReservationStations[1]?.reservationStationType +
                 " Reservation Station"
-              : "undefined"
-          }
-        ></GenericTable>
-        <GenericTable
-          type={GenericTableTypeEnum.ReservationStations}
-          data={
-            TomasuloSystem
-              ? TomasuloSystem.ReservationStations[2]?.stations
-              : []
-          }
-          title={
-            TomasuloSystem
-              ? TomasuloSystem.ReservationStations[2]?.reservationStationType +
+                : "undefined"
+            }
+          ></GenericTable>
+          <GenericTable
+            type={GenericTableTypeEnum.ReservationStations}
+            data={
+              TomasuloSystem
+                ? TomasuloSystem.ReservationStations[2]?.stations
+                : []
+            }
+            title={
+              TomasuloSystem
+                ? TomasuloSystem.ReservationStations[2]?.reservationStationType +
                 " Reservation Station"
-              : "undefined"
-          }
-        ></GenericTable>
+                : "undefined"
+            }
+          ></GenericTable>
 
-        {/* Load Buffer */}
-        <GenericTable
-          type={GenericTableTypeEnum.LoadBuffer}
-          data={TomasuloSystem ? TomasuloSystem.Buffers[0]?.buffers : []}
-          title={
-            TomasuloSystem
-              ? TomasuloSystem.Buffers[0]?.bufferType + " Buffer"
-              : "undefined"
-          }
-        ></GenericTable>
+          {/* Load Buffer */}
+          <GenericTable
+            type={GenericTableTypeEnum.LoadBuffer}
+            data={TomasuloSystem ? TomasuloSystem.Buffers[0]?.buffers : []}
+            title={
+              TomasuloSystem
+                ? TomasuloSystem.Buffers[0]?.bufferType + " Buffer"
+                : "undefined"
+            }
+          ></GenericTable>
 
-        {/* Store Buffer */}
-        <GenericTable
-          type={GenericTableTypeEnum.StoreBuffer}
-          data={TomasuloSystem ? TomasuloSystem.Buffers[1]?.buffers : []}
-          title={
-            TomasuloSystem
-              ? TomasuloSystem.Buffers[1]?.bufferType + " Buffer"
-              : "undefined"
-          }
-        ></GenericTable>
+          {/* Store Buffer */}
+          <GenericTable
+            type={GenericTableTypeEnum.StoreBuffer}
+            data={TomasuloSystem ? TomasuloSystem.Buffers[1]?.buffers : []}
+            title={
+              TomasuloSystem
+                ? TomasuloSystem.Buffers[1]?.bufferType + " Buffer"
+                : "undefined"
+            }
+          ></GenericTable>
 
-        {/* Instruction Memory */}
+          {/* Instruction Memory */}
 
-        <div className=" bg-blue-300 flex flex-col gap-5 p-4 rounded-md">
-          <h2 className="text-center text-5xl text-white font-bold">Program</h2>
-          <ol
-            start={0}
-            className="list-decimal list-inside mt-4 overflow-y-auto max-h-[70vh] text-xl font-bold"
-          >
-            {instructionMemory.length > 0 ? (
-              instructionMemory.map((inst, index) => (
-                <li key={index} className="text-white">
-                  {inst.t
-                    ? `${inst.type} ${inst.d}, ${inst.s}, ${inst.t} ` // (Latency: ${inst.latency})
-                    : `${inst.type} ${inst.d}, ${inst.s} `}
-                  {/* // (Latency: ${inst.latency})}  */}
-                </li>
-              ))
-            ) : (
-              <p className="text-white">No instructions added</p>
-            )}
-          </ol>
-        </div>
-        <div className="mb-2"></div>
-
-        {/* Register File */}
-        <GenericTable
-          type={GenericTableTypeEnum.RegisterFile}
-          data={TomasuloSystem ? TomasuloSystem.registerFile : []}
-          title={"Register File"}
-        ></GenericTable>
-
-        {/* Cache */}
-        <div className="bg-blue-300 flex flex-col gap-5 p-4 rounded-md">
-          <h2 className="text-center text-5xl text-white font-bold">Cache</h2>
-          <div className="overflow-y-auto max-h-[70vh]">
-            {TomasuloSystem?.cache?.cache?.length > 0 ? (
-              <table className="table-auto w-full text-xl font-bold text-white">
-                <thead>
-                  <tr className="bg-blue-500">
-                    <th className="px-4 py-2">Block Index</th>
-                    <th className="px-4 py-2">Address</th>
-                    <th className="px-4 py-2">Data</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {TomasuloSystem?.cache?.cache?.map((block, index) => (
-                    <tr
-                      key={index}
-                      className="even:bg-blue-400 odd:bg-blue-300"
-                    >
-                      <td className="px-4 py-2">{index}</td>
-                      <td className="px-4 py-2">
-                        [{block?.address[0]}, {block?.address[1]}]
-                      </td>
-                      <td className="px-4 py-2">
-                        {Array.from(block?.data).join(", ")}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            ) : (
-              <p className="text-white text-center" aria-live="polite">
-                No cache added
-              </p>
-            )}
+          <div className=" bg-blue-300 flex flex-col gap-5 p-4 rounded-md">
+            <h2 className="text-center text-5xl text-white font-bold">Program</h2>
+            <ol
+              start={0}
+              className="list-decimal list-inside mt-4 overflow-y-auto max-h-[70vh] text-xl font-bold"
+            >
+              {instructionMemory.length > 0 ? (
+                instructionMemory.map((inst, index) => (
+                  <li key={index} className="text-white">
+                    {inst.t
+                      ? `${inst.type} ${inst.d}, ${inst.s}, ${inst.t} ` // (Latency: ${inst.latency})
+                      : `${inst.type} ${inst.d}, ${inst.s} `}
+                    {/* // (Latency: ${inst.latency})}  */}
+                  </li>
+                ))
+              ) : (
+                <p className="text-white">No instructions added</p>
+              )}
+            </ol>
           </div>
-        </div>
 
-        {/* Instruction Queue */}
-        <GenericTable
-          type={GenericTableTypeEnum.InstructionQueue}
-          data={TomasuloSystem ? TomasuloSystem.instructionQueue : []}
-          title={"Instruction Queue"}
-        ></GenericTable>
+          {/* Register File */}
+          <GenericTable
+            type={GenericTableTypeEnum.RegisterFile}
+            data={TomasuloSystem ? TomasuloSystem.registerFile : []}
+            title={"Register File"}
+          ></GenericTable>
+
+          {/* Cache */}
+          <div className="bg-blue-300 flex flex-col gap-5 p-4 rounded-md">
+            <h2 className="text-center text-5xl text-white font-bold">Cache</h2>
+            <div className="overflow-y-auto max-h-[70vh]">
+              {TomasuloSystem?.cache?.cache?.length > 0 ? (
+                <table className="table-auto w-full text-xl font-bold text-white">
+                  <thead>
+                    <tr className="bg-blue-500">
+                      <th className="px-4 py-2">Block Index</th>
+                      <th className="px-4 py-2">Address</th>
+                      <th className="px-4 py-2">Data</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {TomasuloSystem?.cache?.cache?.map((block, index) => (
+                      <tr
+                        key={index}
+                        className="even:bg-blue-400 odd:bg-blue-300"
+                      >
+                        <td className="px-4 py-2">{index}</td>
+                        <td className="px-4 py-2">
+                          [{block?.address[0]}, {block?.address[1]}]
+                        </td>
+                        <td className="px-4 py-2">
+                          {Array.from(block?.data).join(", ")}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              ) : (
+                <p className="text-white text-center" aria-live="polite">
+                  No cache added
+                </p>
+              )}
+            </div>
+          </div>
+
+          {/* Instruction Queue */}
+          <GenericTable
+            type={GenericTableTypeEnum.InstructionQueue}
+            data={poppedIntstruction ? [{ ...poppedIntstruction }] : []}
+            title="Instruction Queue"
+          ></GenericTable>
+
+        </div>
       </div>
     </div>
   );

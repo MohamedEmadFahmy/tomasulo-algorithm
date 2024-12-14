@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import { Config } from "../App";
 import { userInput } from "../userInput";
-import { Memory, SystemCache, TInstruction } from "./types";
+import { InstructionTypeEnum, Memory, SystemCache, TInstruction } from "./types";
 // import { userInput } from "./tomasulo";
 
 /* conventions:
@@ -88,7 +88,12 @@ export function setMemory(
 
 export function initMemory() {
 	for (let i = 0; i < MainMemory.memory.length; i++) {
-		MainMemory.memory[i] = 0;
+        if(i==4){
+            MainMemory.memory[i] = 8;
+        }
+        else{
+            MainMemory.memory[i] = 0;
+        }
 	}
 }
 

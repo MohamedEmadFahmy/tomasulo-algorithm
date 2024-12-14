@@ -25,6 +25,7 @@ const reservationStationsColumns = [
 	{ key: "QK", header: "Qk" },
 	{ key: "busy", header: "Busy" },
 	{ key: "cyclesRemaining", header: "Cycles Remaining" },
+	{ key: "res", header: "Computed Value" },
 ];
 
 // Load Buffer Table
@@ -33,6 +34,7 @@ const loadBufferColumns = [
 	{ key: "busy", header: "Busy" },
 	{ key: "address", header: "Address" },
 	{ key: "cyclesRemaining", header: "Cycles Remaining" },
+	{ key: "res", header: "Computed Value" },
 ];
 
 // Store Buffer Table
