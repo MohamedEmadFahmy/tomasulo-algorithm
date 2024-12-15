@@ -348,7 +348,7 @@ function setRegisterFile() {
   registerFile = [
     { tag: "R0", Q: "0", content: 0 },
     { tag: "R1", Q: "0", content: 5 },
-    { tag: "R2", Q: "0", content: 0 },
+    { tag: "R2", Q: "0", content: 5 },
     { tag: "R3", Q: "0", content: 0 },
     { tag: "R4", Q: "0", content: 0 },
     { tag: "R5", Q: "0", content: 0 },
@@ -379,9 +379,9 @@ function setRegisterFile() {
     { tag: "R30", Q: "0", content: 0 },
     { tag: "R31", Q: "0", content: 0 },
     { tag: "F0", Q: "0", content: 0 },
-    { tag: "F1", Q: "0", content: 0 },
+    { tag: "F1", Q: "0", content: 10 },
     { tag: "F2", Q: "0", content: 5 },
-    { tag: "F3", Q: "0", content: 0 },
+    { tag: "F3", Q: "0", content: 20 },
     { tag: "F4", Q: "0", content: 7 },
     { tag: "F5", Q: "0", content: 0 },
     { tag: "F6", Q: "0", content: 0 },
@@ -466,6 +466,8 @@ function fetchInstruction(): void {
   const instruction = InstructionMemory.instructions[InstructionMemory.PC];
 
   instructionQueue.push(instruction);
+  printTomasuloSystem();
+
   InstructionMemory.PC++;
   // [1] --> [1,2]
 }
@@ -479,7 +481,7 @@ function issue(): void {
     return;
   }
 
-  const instruction = instructionQueue[0]; //always fetches last
+  const instruction = instructionQueue[0]; //always fetches first
   console.log("Instruction Fetched", instruction);
   //issue
   switch (instruction.type) {
@@ -537,7 +539,7 @@ function issueToReservationStation1(instruction: TInstruction): void {
     console.log("No available reservation station for ADD/SUB operation.");
     return;
   }
-  poppedIntstruction = instructionQueue.pop();
+  poppedIntstruction = instructionQueue.shift();
 
   //loading operands
   rs.op = instruction.type;
@@ -558,7 +560,7 @@ function issueToReservationStation2(instruction: TInstruction): void {
     console.log("No available reservation station for MUL/DIV operation.");
     return;
   }
-  poppedIntstruction = instructionQueue.pop();
+  poppedIntstruction = instructionQueue.shift();
 
   //loading operands
   rs.op = instruction.type;
@@ -579,7 +581,7 @@ function issueToReservationStationInteger(instruction: TInstruction): void {
     console.log("No available reservation station for integer operation.");
     return;
   }
-  poppedIntstruction = instructionQueue.pop();
+  poppedIntstruction = instructionQueue.shift();
 
   //loading operands
   rs.op = instruction.type;
@@ -609,7 +611,7 @@ function issueToLoadBuffer(instruction: TInstruction): void {
     //stall
     return;
   }
-  poppedIntstruction = instructionQueue.pop();
+  poppedIntstruction = instructionQueue.shift();
 
   //loading operands
   buffer.op = instruction.type;
@@ -641,7 +643,7 @@ function issueToStoreBuffer(instruction: TInstruction): void {
     console.log("No available store buffer.");
     return;
   }
-  poppedIntstruction = instructionQueue.pop();
+  poppedIntstruction = instructionQueue.shift();
 
   //loading operands
 
@@ -1571,10 +1573,10 @@ function execute(): void {
 //   console.log("Register File:");
 //   console.table(registerFile);
 // }
-// function printInstructionQueue(): void {
-//   console.log("Instruction Queue:");
-//   console.table(instructionQueue);
-// }
+function printInstructionQueue(): void {
+  console.log("Instruction Queue:");
+  console.table(instructionQueue);
+}
 
 function printMemory(): void {
   console.log("Memory:");
@@ -1583,6 +1585,7 @@ function printMemory(): void {
 
 function printTomasuloSystem(): void {
   printMemory();
+  printInstructionQueue(); 
 }
 
 export function simulateStep() {
@@ -1592,9 +1595,8 @@ export function simulateStep() {
   writeBack();
   execute();
   issue();
-  printTomasuloSystem();
 
-  // instructionQueue.pop();
-  printMemory();
+  // instructionQueue.shift();
+  // printMemory();
   TomasuloSystem.clock++;
 }

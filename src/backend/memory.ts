@@ -91,7 +91,8 @@ export function initMemory() {
 		MainMemory.memory[i] = 0;
 	}
 	MainMemory.memory[0] = 2;
-	MainMemory.memory[8] = 3;
+	MainMemory.memory[20] = 8;
+	MainMemory.memory[29] = 33;
 
 }
 
