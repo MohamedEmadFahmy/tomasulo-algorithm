@@ -13,7 +13,6 @@ import {
   simulateStep,
   setupSystem,
   ITomasuloSystem,
-  poppedIntstruction
 } from "../backend/tomasulo";
 
 let TomasuloSystem: ITomasuloSystem = {
@@ -326,11 +325,11 @@ const SimulatorView: React.FC<SimulatorViewProps> = ({
           </div>
 
           {/* Instruction Queue */}
-          <GenericTable
+            <GenericTable
             type={GenericTableTypeEnum.InstructionQueue}
-            data={poppedIntstruction ? [{ ...poppedIntstruction }] : []}
+            data={TomasuloSystem ? TomasuloSystem.instructionQueue : []}
             title="Instruction Queue"
-          ></GenericTable>
+            ></GenericTable>
 
         </div>
       </div>
