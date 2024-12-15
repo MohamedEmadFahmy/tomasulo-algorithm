@@ -17,6 +17,9 @@ import { InstructionTypeEnum, Memory, SystemCache, TInstruction } from "./types"
  * 10. Instruction Memory is indexed by PC
  * 11. Assume Branch is always taken
  * 12. Instruction Queue is infinite
+ * 13. Cache Miss Penalty is 1 cycle
+ * 14. Cache Hit Latency is 0 cycles
+ * 15. Load updates cache as soon as execution finishes but writes in following clock cycle
  */
 
 // User Input variables
@@ -91,7 +94,9 @@ export function initMemory() {
 		MainMemory.memory[i] = 0;
 	}
 	MainMemory.memory[0] = 2;
+	MainMemory.memory[4] = 4;
 	MainMemory.memory[20] = 8;
+	MainMemory.memory[21] = 1;
 	MainMemory.memory[29] = 33;
 
 }
