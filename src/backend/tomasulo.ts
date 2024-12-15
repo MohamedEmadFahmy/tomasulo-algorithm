@@ -1106,6 +1106,9 @@ function execStore(Tbuffer: TBuffer): void {
 function execBranch(branchAddress: number): void {
   // Implement branch logic here
   InstructionMemory.PC = branchAddress;
+  poppedIntstruction = instructionQueue.shift();
+
+
 }
 
 function isBusAvailable(): boolean {
